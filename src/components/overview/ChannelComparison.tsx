@@ -58,7 +58,7 @@ export function ChannelComparison({ rows }: { rows: ChannelRow[] }) {
             </TableRow>
           ))}
           <TableRow className="border-white/10 bg-white/[0.03] hover:bg-white/[0.03]">
-            <TableCell className="text-[13px] font-semibold">Total geral</TableCell>
+            <TableCell className="text-[13px] font-semibold">Total mídia paga</TableCell>
             <TableCell className="text-right text-[13px] font-semibold">{cell(anySpend ? currency(totalSpend) : null)}</TableCell>
             <TableCell className="text-right text-[13px] font-semibold">{cell(nfmt(totalLeads))}</TableCell>
             <TableCell className="text-right text-[13px] font-semibold">

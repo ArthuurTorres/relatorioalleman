@@ -104,19 +104,22 @@ export function OverviewTab({
   });
 
   const leadsTotal = dashboard?.summary.total ?? 0;
+  const byOrigemK = dashboard?.summary.byOrigem ?? {};
+  const metaLeads = byOrigemK["Meta"] ?? 0;
+  const googleLeads = byOrigemK["Google"] ?? 0;
+  const otherLeads = byOrigemK["Outros"] ?? 0;
+  const paidLeads = metaLeads + googleLeads;
   const metaSpend = metaEnabled ? perf.data?.summary.spend ?? 0 : 0;
   const metaSpendPrev = metaEnabled ? perfPrev.data?.summary.spend ?? 0 : 0;
   const googleSpend = googleEnabled ? google.data?.summary.spend ?? 0 : 0;
   const googleSpendPrev = googleEnabled ? googlePrev.data?.summary.spend ?? 0 : 0;
   const spend = metaSpend + googleSpend;
   const spendPrev = metaSpendPrev + googleSpendPrev;
-  const cpl = leadsTotal > 0 && spend > 0 ? spend / leadsTotal : null;
-  const leadsPrev = dashboard?.summary.totalPrev ?? 0;
-  const cplPrev = leadsPrev > 0 ? spendPrev / leadsPrev : null;
+  const cpl = paidLeads > 0 && spend > 0 ? spend / paidLeads : null;
 
   const series = dashboard?.series ?? [];
   const leadsByDay = useMemo(
-    () => series.map((s) => ({ day: s.day, leads: (s.Google || 0) + (s.Meta || 0) + (s.Outros || 0) })),
+    () => series.map((s) => ({ day: s.day, leads: (s.Google || 0) + (s.Meta || 0) })),
     [series],
   );
 
@@ -136,15 +139,10 @@ export function OverviewTab({
     return Array.from(map.values()).sort((a, b) => a.day.localeCompare(b.day));
   }, [perf.data?.daily, google.data?.daily, leadsByDay]);
 
-  const byOrigemK = dashboard?.summary.byOrigem ?? {};
-  const metaLeads = byOrigemK["Meta"] ?? 0;
-  const googleLeads = byOrigemK["Google"] ?? 0;
   const metaCpl = metaLeads > 0 && metaSpend > 0 ? metaSpend / metaLeads : null;
   const googleCpl = googleLeads > 0 && googleSpend > 0 ? googleSpend / googleLeads : null;
   const googleReady = Boolean(google.data);
   const googleLoading = google.isLoading;
-  const googleConversions = google.data?.summary.conversions;
-  const googleCostPerConversion = google.data?.summary.costPerConversion;
   const googleRetrievedAt = google.data?.retrievedAt;
 
   const kpisGeral: Kpi[] = [
@@ -159,9 +157,9 @@ export function OverviewTab({
     },
     {
       key: "leads",
-      label: "Leads gerados",
-      value: nfmt(leadsTotal),
-      variation: dashboard?.summary.variacaoPct ?? null,
+      label: "Leads de mídia paga",
+      value: nfmt(paidLeads),
+      variation: null,
       trend: leadsByDay.map((d) => ({ v: d.leads })),
       color: CHART.purple,
     },
@@ -169,10 +167,10 @@ export function OverviewTab({
       key: "cpl",
       label: "CPL geral",
       value: cpl == null ? null : currency(cpl),
-      variation: cpl != null && cplPrev ? variation(cpl, cplPrev) : null,
+      variation: null,
       trend: investLeads.map((d) => ({ v: d.leads > 0 ? d.spend / d.leads : 0 })),
       color: CHART.cyan,
-      hint: "precisa de investimento e leads no período",
+      hint: "investimento Meta + Google ÷ leads Meta + Google",
     },
   ];
 
@@ -215,19 +213,30 @@ export function OverviewTab({
     },
     {
       key: "google-leads",
-      label: "Google · Conversões atribuídas",
-      value: googleLoading ? "…" : googleConversions == null ? null : googleConversions.toLocaleString("pt-BR", { maximumFractionDigits: 2 }),
+      label: "Google · Leads gerados",
+      value: nfmt(googleLeads),
       variation: null,
       color: CHART.cyan,
-      hint: "resultado atribuído pelo Google Ads",
+      hint: "leads classificados como Google no CRM",
     },
     {
       key: "google-cpl",
-      label: "Google · Custo por conversão",
-      value: googleLoading ? "…" : googleCostPerConversion == null ? null : currency(googleCostPerConversion),
+      label: "Google · CPL",
+      value: googleCpl == null ? null : currency(googleCpl),
       variation: null,
       color: CHART.cyan,
-      hint: google.isError ? "falha ao consultar a conta conectada" : "investimento ÷ conversões atribuídas",
+      hint: google.isError ? "investimento do Google indisponível" : "investimento ÷ leads Google no CRM",
+    },
+  ];
+
+  const kpisOutros: Kpi[] = [
+    {
+      key: "other-leads",
+      label: "Outros · Leads gerados",
+      value: nfmt(otherLeads),
+      variation: null,
+      trend: series.map((d) => ({ v: d.Outros || 0 })),
+      color: CHART.grey,
     },
   ];
 
@@ -258,14 +267,6 @@ export function OverviewTab({
       spend: googleReady ? googleSpend : null,
       leads: byOrigem["Google"] ?? 0,
       cpl: googleReady ? googleCpl : null,
-      contratos: null, conversao: null, roas: null,
-    },
-    {
-      canal: "Outros",
-      color: CHART.grey,
-      spend: null,
-      leads: byOrigem["Outros"] ?? 0,
-      cpl: null,
       contratos: null, conversao: null, roas: null,
     },
   ];
@@ -353,6 +354,12 @@ export function OverviewTab({
               <GoogleAdsIcon className="h-4.5 w-4.5" /> Google Ads
             </p>
             <ExecutiveKpis kpis={kpisGoogle} loading={dashboardLoading || googleLoading} />
+          </div>
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+              Outros
+            </p>
+            <ExecutiveKpis kpis={kpisOutros} loading={dashboardLoading} />
           </div>
         </div>
       </Panel>
