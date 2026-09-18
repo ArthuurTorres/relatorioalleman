@@ -89,9 +89,8 @@ async function handler(request: Request): Promise<Response> {
       fields: "id,name,objective,status,effective_status,daily_budget,lifetime_budget,start_time,stop_time,created_time,updated_time",
       limit: "200",
     });
-    // Somente campanhas da conta TRIVE
-    const isTrive = (n: unknown) => String(n ?? "").toLowerCase().includes("[trive]");
-    const triveCampaigns = campaigns.filter((c: any) => isTrive(c.name));
+    // Sincroniza todas as campanhas da conta configurada (sem filtro por nome).
+    const triveCampaigns = campaigns;
     const triveIds = new Set(triveCampaigns.map((c: any) => String(c.id)));
     if (triveCampaigns.length) {
       const rows = triveCampaigns.map((c: any) => ({
@@ -123,7 +122,6 @@ async function handler(request: Request): Promise<Response> {
       limit: "200",
     });
     const triveAdsets = adsets.filter((a: any) => triveIds.has(String(a.campaign_id)));
-    const triveAdsetIds = new Set(triveAdsets.map((a: any) => String(a.id)));
     if (triveAdsets.length) {
       const rows = triveAdsets.map((a: any) => ({
         id: String(a.id),
@@ -174,44 +172,70 @@ async function handler(request: Request): Promise<Response> {
     }
     stats.ads = triveAds.length;
 
-    // 4) INSIGHTS por dia por ad
-    const insights = await graphAll(`/${act}/insights`, token, {
-      level: "ad",
-      time_increment: "1",
-      time_range: JSON.stringify({ since, until }),
-      fields: "ad_id,adset_id,campaign_id,impressions,reach,clicks,inline_link_clicks,spend,cpc,cpm,ctr,frequency,actions,date_start",
-      limit: "500",
-    });
-    const triveInsights = insights.filter(
-      (i: any) => triveIds.has(String(i.campaign_id)) || triveAdsetIds.has(String(i.adset_id)),
-    );
-    if (triveInsights.length) {
-      const rows = triveInsights.map((i: any) => ({
-        ad_id: String(i.ad_id),
-        date_start: i.date_start,
-        adset_id: i.adset_id ? String(i.adset_id) : null,
-        campaign_id: i.campaign_id ? String(i.campaign_id) : null,
-        account_id: act,
-        impressions: i.impressions ? Number(i.impressions) : 0,
-        reach: i.reach ? Number(i.reach) : 0,
-        clicks: i.clicks ? Number(i.clicks) : 0,
-        inline_link_clicks: i.inline_link_clicks ? Number(i.inline_link_clicks) : 0,
-        spend: i.spend ? Number(i.spend) : 0,
-        cpc: i.cpc ? Number(i.cpc) : null,
-        cpm: i.cpm ? Number(i.cpm) : null,
-        ctr: i.ctr ? Number(i.ctr) : null,
-        frequency: i.frequency ? Number(i.frequency) : null,
-        actions: i.actions ?? null,
-        synced_at: new Date().toISOString(),
-      }));
-      for (let i = 0; i < rows.length; i += 200) {
-        const { error } = await supabaseAdmin
-          .from("meta_ad_insights")
-          .upsert(rows.slice(i, i + 200), { onConflict: "ad_id,date_start" });
-        if (error) errors.push(`insights: ${error.message}`);
+    // 4) INSIGHTS por dia por ad — em blocos de 7 dias (a API falha em janelas grandes)
+    const CHUNK_DAYS = 7;
+    const sinceMs = Date.parse(`${since}T00:00:00Z`);
+    const untilMs = Date.parse(`${until}T00:00:00Z`);
+    const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+    let totalInsights = 0;
+
+    for (let startMs = sinceMs; startMs <= untilMs; startMs += CHUNK_DAYS * 86400000) {
+      const chunkSince = day(startMs);
+      const chunkUntil = day(Math.min(startMs + (CHUNK_DAYS - 1) * 86400000, untilMs));
+
+      let chunk: AnyRec[] = [];
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          chunk = await graphAll(`/${act}/insights`, token, {
+            level: "ad",
+            time_increment: "1",
+            time_range: JSON.stringify({ since: chunkSince, until: chunkUntil }),
+            fields:
+              "ad_id,adset_id,campaign_id,impressions,reach,clicks,inline_link_clicks,spend,cpc,cpm,ctr,frequency,actions,date_start",
+            limit: "500",
+          });
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        }
+      }
+      if (lastErr) {
+        errors.push(`insights ${chunkSince}..${chunkUntil}: ${String((lastErr as any)?.message || lastErr)}`);
+        continue;
+      }
+
+      if (chunk.length) {
+        const rows = chunk.map((i: any) => ({
+          ad_id: String(i.ad_id),
+          date_start: i.date_start,
+          adset_id: i.adset_id ? String(i.adset_id) : null,
+          campaign_id: i.campaign_id ? String(i.campaign_id) : null,
+          account_id: act,
+          impressions: i.impressions ? Number(i.impressions) : 0,
+          reach: i.reach ? Number(i.reach) : 0,
+          clicks: i.clicks ? Number(i.clicks) : 0,
+          inline_link_clicks: i.inline_link_clicks ? Number(i.inline_link_clicks) : 0,
+          spend: i.spend ? Number(i.spend) : 0,
+          cpc: i.cpc ? Number(i.cpc) : null,
+          cpm: i.cpm ? Number(i.cpm) : null,
+          ctr: i.ctr ? Number(i.ctr) : null,
+          frequency: i.frequency ? Number(i.frequency) : null,
+          actions: i.actions ?? null,
+          synced_at: new Date().toISOString(),
+        }));
+        for (let i = 0; i < rows.length; i += 200) {
+          const { error } = await supabaseAdmin
+            .from("meta_ad_insights")
+            .upsert(rows.slice(i, i + 200), { onConflict: "ad_id,date_start" });
+          if (error) errors.push(`insights: ${error.message}`);
+        }
+        totalInsights += rows.length;
       }
     }
-    stats.insights = triveInsights.length;
+    stats.insights = totalInsights;
   } catch (e: any) {
     errors.push(String(e?.message || e));
   }

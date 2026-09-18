@@ -40,7 +40,7 @@ import { CampaignComparison } from "@/components/CampaignComparison";
 import { GoalsTab } from "@/components/overview/GoalsTab";
 import { IntegrationsTab } from "@/components/overview/IntegrationsTab";
 
-import triveLogo from "@/assets/trive-logo.png.asset.json";
+import allemanLogo from "@/assets/alleman-logo.jpg.asset.json";
 import lancersLogo from "@/assets/lancers-logo.png.asset.json";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
 
@@ -52,9 +52,9 @@ export const Route = createFileRoute("/dashboard")({
   },
   head: () => ({
     meta: [
-      { title: "Trive × Lancers · Painel de Performance" },
+      { title: "Alleman Corretora · Painel de Performance" },
       { name: "description", content: "Painel de performance por origem, campanha, anúncio e página." },
-      { property: "og:title", content: "Trive × Lancers · Painel de Performance" },
+      { property: "og:title", content: "Alleman Corretora · Painel de Performance" },
       { property: "og:description", content: "Painel de performance por origem, campanha, anúncio e página." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -66,36 +66,56 @@ export const Route = createFileRoute("/dashboard")({
 
 const COLORS = {
   Google: "oklch(0.78 0.14 230)",
-  Meta: "oklch(0.7 0.19 305)",
+  Meta: "oklch(0.62 0.2 305)",
   Outros: "oklch(0.72 0.03 240)",
 };
 
-function toLocalDate(value: string | Date) {
+/** Fuso de referência do negócio: America/Sao_Paulo (UTC-3, sem horário de verão). */
+const TZ_OFFSET = "-03:00";
+
+/** yyyy-mm-dd do instante informado no fuso de São Paulo */
+function spDay(value: string | Date) {
   if (typeof value === "string") {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+    if (m) return value.trim();
+  }
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+function shiftDay(day: string, deltaDays: number) {
+  const [y, m, d] = day.split("-").map(Number);
+  const base = new Date(Date.UTC(y!, (m ?? 1) - 1, d ?? 1));
+  base.setUTCDate(base.getUTCDate() + deltaDays);
+  return base.toISOString().slice(0, 10);
+}
+
+function toLocalDate(value: string | Date) {
+  const day = spDay(value);
+  if (day) {
+    const [y, m, d] = day.split("-").map(Number);
+    return new Date(y!, (m ?? 1) - 1, d ?? 1);
   }
   return new Date(value);
 }
 
 function startOfDayIso(value: string | Date) {
-  const d = toLocalDate(value);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  return `${spDay(value)}T00:00:00.000${TZ_OFFSET}`;
 }
 
 function endOfDayIso(value: string | Date) {
-  const d = toLocalDate(value);
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
+  return `${spDay(value)}T23:59:59.999${TZ_OFFSET}`;
 }
 
-/** yyyy-mm-dd no fuso local (evita o deslocamento de 1 dia do UTC) */
+/** yyyy-mm-dd no fuso de São Paulo (evita o deslocamento de 1 dia) */
 function localDay(iso: string | Date) {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
-  if (Number.isNaN(d.getTime())) return "";
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return spDay(iso);
 }
 
 function fmtDay(iso: string) {
@@ -107,15 +127,10 @@ function fmtDay(iso: string) {
 
 
 function todayMinus(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  return startOfDayIso(shiftDay(spDay(new Date()), -days));
 }
 function endOfToday() {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
+  return endOfDayIso(spDay(new Date()));
 }
 
 type RangePreset = {
@@ -286,7 +301,7 @@ function Dashboard() {
               <div className="flex min-w-0 items-center gap-4">
                 {/* Logos side by side */}
                 <div className="flex items-center gap-3.5">
-                  <img src={triveLogo.url} alt="Trive" className="h-11 md:h-14 w-auto shrink-0" />
+                  <img src={allemanLogo.url} alt="Alleman Corretora" className="h-11 md:h-14 w-auto shrink-0 rounded-md bg-white p-0.5" />
                   <span className="h-9 w-px bg-white/15" aria-hidden />
                   <img src={lancersLogo.url} alt="Lancers" className="h-11 md:h-14 w-auto shrink-0" />
                 </div>
@@ -614,7 +629,7 @@ function Dashboard() {
                           );
                         }}
                       />
-                      <Bar dataKey="count" fill="oklch(0.78 0.14 230)" radius={[0, 8, 8, 0]} />
+                      <Bar dataKey="count" fill="oklch(0.62 0.2 305)" radius={[0, 8, 8, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -769,7 +784,7 @@ function Dashboard() {
 
 
           <footer className="pt-4 pb-8 text-center text-[11px] text-muted-foreground/60 tracking-wider uppercase">
-            Trive × Lancers · dados sincronizados em tempo real
+            Alleman Corretora × Lancers · dados sincronizados em tempo real
           </footer>
         </main>
       </div>
