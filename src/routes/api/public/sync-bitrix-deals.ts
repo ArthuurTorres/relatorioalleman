@@ -13,8 +13,10 @@ function parseExtraParams(url: string): Record<string, string> {
   return params;
 }
 
+/** Classifica o canal a partir do texto (UTM ou nome da origem no CRM). */
 function derivarOrigem(utmSource: string | null, fbclid: string | null): string {
   const s = (utmSource || "").toLowerCase();
+  if (s.includes("insta") || s.includes("face")) return "Meta";
   if (s.includes("google") || s.includes("gads") || s.includes("adwords")) return "Google";
   if (s.includes("facebook") || s.includes("meta") || s.includes("instagram") || s.includes("fb") || fbclid) return "Meta";
   return "Outros";
@@ -82,6 +84,25 @@ async function handler(request: Request): Promise<Response> {
       .maybeSingle();
     start = Number(cur?.start_cursor || 0);
   }
+  // Mapa de origens do CRM (SOURCE_ID -> nome legível), usado quando o negócio
+  // não traz UTMs (caso comum em CRMs alimentados por WhatsApp/telefonia).
+  const sourceNames = new Map<string, string>();
+  try {
+    const sres = await fetch(`${webhookBase}crm.status.list.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filter: { ENTITY_ID: "SOURCE" } }),
+    });
+    if (sres.ok) {
+      const sjson = await sres.json();
+      for (const st of (sjson.result || []) as Array<Record<string, unknown>>) {
+        sourceNames.set(String(st.STATUS_ID), String(st.NAME ?? ""));
+      }
+    }
+  } catch {
+    /* segue sem os nomes de origem */
+  }
+
   let totalSynced = 0;
   let pages = 0;
   let hasMore = true;
@@ -95,7 +116,7 @@ async function handler(request: Request): Promise<Response> {
         order: { DATE_CREATE: "DESC" },
         filter: {},
         select: [
-          "ID", "TITLE", "CONTACT_ID", "STAGE_ID", "OPPORTUNITY",
+          "ID", "TITLE", "CONTACT_ID", "STAGE_ID", "OPPORTUNITY", "SOURCE_ID",
           "UTM_SOURCE", "UTM_MEDIUM", "UTM_CAMPAIGN", "UTM_CONTENT", "UTM_TERM",
           "UF_CRM_1773253579129", "UF_CRM_1773253633405",
           "UF_CRM_1773253674766", "UF_CRM_1773253691932", "UF_CRM_1773253705599",
@@ -121,7 +142,8 @@ async function handler(request: Request): Promise<Response> {
       // Quando o "fbclid" do Bitrix não é um click ID real, é um rótulo
       // (nome de campanha ou nome do formulário) — usar como campaign_name fallback.
       const fbclidLabel = !isRealFbclid(rawFbclid) ? rawFbclid : null;
-      const utmSource = (deal.UTM_SOURCE as string) || extra.utm_source || null;
+      const sourceName = sourceNames.get(String(deal.SOURCE_ID ?? "")) || null;
+      const utmSource = (deal.UTM_SOURCE as string) || extra.utm_source || sourceName || null;
       // Origem Meta = utm indica Meta, OU tem fbclid real, OU tem rótulo Meta-like
       const origem = derivarOrigem(utmSource, fbclidReal || (fbclidLabel && /meta|fb\b|facebook|instagram/i.test(fbclidLabel) ? "1" : null));
       const dominio = (deal.UF_CRM_1773253579129 as string) || extrairDominio(urlPagina);
