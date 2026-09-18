@@ -5,8 +5,12 @@ import { createHash, timingSafeEqual } from "node:crypto";
 type GateSession = { unlocked?: boolean };
 
 function getSessionConfig() {
-  const password = process.env.SESSION_SECRET;
-  if (!password) throw new Error("SESSION_SECRET não configurado");
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET não configurado");
+
+  // useSession exige uma chave de no mínimo 32 caracteres; derivamos um hash
+  // estável para aceitar segredos de qualquer tamanho.
+  const password = createHash("sha256").update(secret, "utf8").digest("hex");
 
   return {
     password,
