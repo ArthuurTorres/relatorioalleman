@@ -108,28 +108,37 @@ export function OverviewTab({
   const metaLeads = byOrigemK["Meta"] ?? 0;
   const googleLeads = byOrigemK["Google"] ?? 0;
   const otherLeads = byOrigemK["Outros"] ?? 0;
-  const paidLeads = metaLeads + googleLeads;
+  const googleHasData = Boolean(
+    google.data &&
+      (google.data.summary.spend > 0 ||
+        google.data.summary.impressions > 0 ||
+        google.data.summary.clicks > 0 ||
+        google.data.summary.conversions > 0),
+  );
+  const paidLeads = metaLeads + (googleHasData ? googleLeads : 0);
   const metaSpend = metaEnabled ? perf.data?.summary.spend ?? 0 : 0;
   const metaSpendPrev = metaEnabled ? perfPrev.data?.summary.spend ?? 0 : 0;
-  const googleSpend = googleEnabled ? google.data?.summary.spend ?? 0 : 0;
-  const googleSpendPrev = googleEnabled ? googlePrev.data?.summary.spend ?? 0 : 0;
+  const googleSpend = googleEnabled && googleHasData ? google.data?.summary.spend ?? 0 : 0;
+  const googleSpendPrev = googleEnabled && googleHasData ? googlePrev.data?.summary.spend ?? 0 : 0;
   const spend = metaSpend + googleSpend;
   const spendPrev = metaSpendPrev + googleSpendPrev;
   const cpl = paidLeads > 0 && spend > 0 ? spend / paidLeads : null;
 
   const series = dashboard?.series ?? [];
   const leadsByDay = useMemo(
-    () => series.map((s) => ({ day: s.day, leads: (s.Google || 0) + (s.Meta || 0) })),
-    [series],
+    () => series.map((s) => ({ day: s.day, leads: (s.Meta || 0) + (googleHasData ? s.Google || 0 : 0) })),
+    [series, googleHasData],
   );
 
   const investLeads = useMemo(() => {
     const map = new Map<string, { day: string; spend: number; leads: number }>();
     for (const r of perf.data?.daily ?? []) map.set(r.day, { day: r.day, spend: Number(r.spend || 0), leads: 0 });
-    for (const r of google.data?.daily ?? []) {
-      const e = map.get(r.day) ?? { day: r.day, spend: 0, leads: 0 };
-      e.spend += Number(r.spend || 0);
-      map.set(r.day, e);
+    if (googleHasData) {
+      for (const r of google.data?.daily ?? []) {
+        const e = map.get(r.day) ?? { day: r.day, spend: 0, leads: 0 };
+        e.spend += Number(r.spend || 0);
+        map.set(r.day, e);
+      }
     }
     for (const r of leadsByDay) {
       const e = map.get(r.day) ?? { day: r.day, spend: 0, leads: 0 };
@@ -137,11 +146,10 @@ export function OverviewTab({
       map.set(r.day, e);
     }
     return Array.from(map.values()).sort((a, b) => a.day.localeCompare(b.day));
-  }, [perf.data?.daily, google.data?.daily, leadsByDay]);
+  }, [perf.data?.daily, google.data?.daily, googleHasData, leadsByDay]);
 
   const metaCpl = metaLeads > 0 && metaSpend > 0 ? metaSpend / metaLeads : null;
   const googleCpl = googleLeads > 0 && googleSpend > 0 ? googleSpend / googleLeads : null;
-  const googleReady = Boolean(google.data);
   const googleLoading = google.isLoading;
   const googleRetrievedAt = google.data?.retrievedAt;
 
@@ -153,7 +161,7 @@ export function OverviewTab({
       variation: variation(spend, spendPrev),
       trend: investLeads.map((d) => ({ v: d.spend })),
       color: CHART.cyan,
-      hint: "Meta Ads + Google Ads",
+      hint: googleHasData ? "Meta Ads + Google Ads" : "Meta Ads · Google aguardando conexão",
     },
     {
       key: "leads",
@@ -170,7 +178,7 @@ export function OverviewTab({
       variation: null,
       trend: investLeads.map((d) => ({ v: d.leads > 0 ? d.spend / d.leads : 0 })),
       color: CHART.cyan,
-      hint: "investimento Meta + Google ÷ leads Meta + Google",
+      hint: googleHasData ? "investimento Meta + Google ÷ leads Meta + Google" : "investimento Meta ÷ leads Meta",
     },
   ];
 
@@ -205,8 +213,8 @@ export function OverviewTab({
     {
       key: "google-invest",
       label: "Google · Investimento",
-      value: googleLoading ? "…" : googleReady ? currency(googleSpend) : null,
-      variation: googleReady ? variation(googleSpend, googleSpendPrev) : null,
+      value: googleLoading ? "…" : googleHasData ? currency(googleSpend) : null,
+      variation: googleHasData ? variation(googleSpend, googleSpendPrev) : null,
       trend: (google.data?.daily ?? []).map((d) => ({ v: Number(d.spend || 0) })),
       color: CHART.cyan,
       hint: google.isError ? "falha ao consultar a conta conectada" : "dados da conta Google Ads",
@@ -264,12 +272,12 @@ export function OverviewTab({
     {
       canal: "Google Ads",
       color: CHART.cyan,
-      spend: googleReady ? googleSpend : null,
+      spend: googleHasData ? googleSpend : null,
       leads: byOrigem["Google"] ?? 0,
-      cpl: googleReady ? googleCpl : null,
+      cpl: googleHasData ? googleCpl : null,
       contratos: null, conversao: null, roas: null,
     },
-  ];
+  ].filter((row) => row.canal !== "Google Ads" || googleHasData);
 
   const bitrixHours = hoursSince(sync.data?.bitrix_last_run);
   const metaHours = hoursSince(sync.data?.meta_last_run);
@@ -300,10 +308,10 @@ export function OverviewTab({
     },
     {
       name: "Google Ads",
-      status: google.isError ? "error" : googleReady ? "ok" : "unknown",
-      statusLabel: google.isError ? "Atenção" : googleReady ? "Conectado" : "Status indisponível",
+      status: google.isError ? "error" : googleHasData ? "ok" : "unknown",
+      statusLabel: google.isError ? "Atenção" : googleHasData ? "Conectado" : "Aguardando conexão",
       lastSync: googleRetrievedAt ? fmtDateTime(googleRetrievedAt) : "—",
-      note: google.isError ? "Falha na leitura da conta" : googleReady ? "Leitura direta da conta" : "—",
+      note: google.isError ? "Falha na leitura da conta" : googleHasData ? "Leitura direta da conta" : "Sem dados disponíveis",
     },
     { name: "Sistema comercial (AGSI)", status: "unknown", statusLabel: "Status indisponível", lastSync: "—", note: "Integração não configurada" },
   ];
@@ -353,7 +361,21 @@ export function OverviewTab({
             <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
               <GoogleAdsIcon className="h-4.5 w-4.5" /> Google Ads
             </p>
-            <ExecutiveKpis kpis={kpisGoogle} loading={dashboardLoading || googleLoading} />
+            {dashboardLoading || googleLoading ? (
+              <ExecutiveKpis kpis={kpisGoogle} loading />
+            ) : googleHasData ? (
+              <ExecutiveKpis kpis={kpisGoogle} />
+            ) : (
+              <div className="flex min-h-14 items-center justify-between gap-3 rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-foreground">Aguardando conexão</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">Os indicadores aparecerão quando houver dados do Google Ads.</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase text-muted-foreground">
+                  Sem dados
+                </span>
+              </div>
+            )}
           </div>
           <div>
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
