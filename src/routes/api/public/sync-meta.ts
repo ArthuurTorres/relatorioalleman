@@ -53,6 +53,11 @@ async function handler(request: Request): Promise<Response> {
     for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
     return d === 0;
   };
+  console.log("[sync-meta] auth debug", {
+    providedLen: provided.length,
+    cronLen: expectedCron.length,
+    anonLen: expectedAnon.length,
+  });
   if (!eq(provided, expectedCron) && !eq(provided, expectedAnon)) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
