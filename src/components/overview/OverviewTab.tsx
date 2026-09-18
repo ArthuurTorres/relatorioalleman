@@ -310,7 +310,7 @@ export function OverviewTab({
       name: "Google Ads",
       status: google.isError ? "error" : googleHasData ? "ok" : "unknown",
       statusLabel: google.isError ? "Atenção" : googleHasData ? "Conectado" : "Aguardando conexão",
-      lastSync: googleRetrievedAt ? fmtDateTime(googleRetrievedAt) : "—",
+      lastSync: googleHasData && googleRetrievedAt ? fmtDateTime(googleRetrievedAt) : "—",
       note: google.isError ? "Falha na leitura da conta" : googleHasData ? "Leitura direta da conta" : "Sem dados disponíveis",
     },
     { name: "Sistema comercial (AGSI)", status: "unknown", statusLabel: "Status indisponível", lastSync: "—", note: "Integração não configurada" },
