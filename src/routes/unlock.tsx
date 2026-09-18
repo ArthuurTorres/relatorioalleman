@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/unlock")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Acesso · Dashboard UTM" },
