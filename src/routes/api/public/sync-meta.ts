@@ -40,24 +40,29 @@ async function graphAll(initialUrl: string, token: string, params: Record<string
 async function handler(request: Request): Promise<Response> {
   const started = Date.now();
   const url = new URL(request.url);
-  const provided =
+  const provided = (
     request.headers.get("x-cron-secret") ||
     url.searchParams.get("secret") ||
     request.headers.get("apikey") ||
-    "";
-  const expectedCron = process.env.CRON_SECRET || "";
-  const expectedAnon = process.env.SUPABASE_PUBLISHABLE_KEY || "";
+    ""
+  ).trim();
+  const expectedCron = (process.env.CRON_SECRET || "").trim();
+  const expectedAnon = (
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    ""
+  ).trim();
+  // Comparação em bytes (UTF-8) para funcionar também com acentos no segredo.
+  const enc = new TextEncoder();
   const eq = (a: string, b: string) => {
-    if (!a || !b || a.length !== b.length) return false;
+    if (!a || !b) return false;
+    const x = enc.encode(a);
+    const y = enc.encode(b);
+    if (x.length !== y.length) return false;
     let d = 0;
-    for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    for (let i = 0; i < x.length; i++) d |= x[i] ^ y[i];
     return d === 0;
   };
-  console.log("[sync-meta] auth debug", {
-    providedLen: provided.length,
-    cronLen: expectedCron.length,
-    anonLen: expectedAnon.length,
-  });
   if (!eq(provided, expectedCron) && !eq(provided, expectedAnon)) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
