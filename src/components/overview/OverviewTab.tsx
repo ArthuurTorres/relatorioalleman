@@ -143,8 +143,6 @@ export function OverviewTab({
   const googleCpl = googleLeads > 0 && googleSpend > 0 ? googleSpend / googleLeads : null;
   const googleReady = Boolean(google.data);
   const googleLoading = google.isLoading;
-  const googleConversions = google.data?.summary.conversions;
-  const googleCostPerConversion = google.data?.summary.costPerConversion;
   const googleRetrievedAt = google.data?.retrievedAt;
 
   const kpisGeral: Kpi[] = [
