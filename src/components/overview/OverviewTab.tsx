@@ -452,8 +452,30 @@ export function OverviewTab({
       </div>
 
       <Panel>
-        <CampaignsPerformance rows={campaigns} loading={perf.isLoading || googleLoading} error={perf.isError && google.isError} />
+        <CampaignsPerformance
+          rows={campaigns}
+          loading={perf.isLoading || googleLoading}
+          error={perf.isError && google.isError}
+          onSelect={(r) => r.campaignId && setSelected(r)}
+        />
+        {crm.data && (
+          <p className="mt-1 text-[11px] text-muted-foreground/70">
+            {nfmt(crm.data.totals.leads_identificados)} de {nfmt(crm.data.totals.leads_bitrix)} leads do período têm campanha identificada
+            ({nfmt(crm.data.totals.leads_nao_identificados)} sem identificação).
+          </p>
+        )}
       </Panel>
+
+      <CampaignLeadsDrawer
+        open={Boolean(selected)}
+        onOpenChange={(v) => !v && setSelected(null)}
+        campaignId={selected?.campaignId ?? null}
+        campaignName={selected?.campanha ?? ""}
+        leadsMeta={selected?.leads ?? null}
+        crm={selected?.crm ?? null}
+        from={filters.from}
+        to={filters.to}
+      />
     </div>
   );
 }
