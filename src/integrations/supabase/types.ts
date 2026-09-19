@@ -191,6 +191,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_match: {
+        Row: {
+          ad_id: string | null
+          adset_id: string | null
+          bitrix_deal_id: string
+          campaign_id: string | null
+          campaign_name: string | null
+          match_source: string
+          matched_at: string
+          meta_lead_id: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          adset_id?: string | null
+          bitrix_deal_id: string
+          campaign_id?: string | null
+          campaign_name?: string | null
+          match_source: string
+          matched_at?: string
+          meta_lead_id?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          adset_id?: string | null
+          bitrix_deal_id?: string
+          campaign_id?: string | null
+          campaign_name?: string | null
+          match_source?: string
+          matched_at?: string
+          meta_lead_id?: string | null
+        }
+        Relationships: []
+      }
       meta_ad_insights: {
         Row: {
           account_id: string
@@ -410,6 +443,93 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_lead_forms: {
+        Row: {
+          created_at: string
+          id: string
+          leads_count: number | null
+          name: string | null
+          page_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          leads_count?: number | null
+          name?: string | null
+          page_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          leads_count?: number | null
+          name?: string | null
+          page_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meta_leads: {
+        Row: {
+          ad_id: string | null
+          ad_name: string | null
+          adset_id: string | null
+          adset_name: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          cidade: string | null
+          created_time: string | null
+          email: string | null
+          form_id: string | null
+          form_name: string | null
+          lead_id: string
+          nome: string | null
+          respostas: Json | null
+          synced_at: string
+          telefone_norm: string | null
+          telefone_raw: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          ad_name?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          cidade?: string | null
+          created_time?: string | null
+          email?: string | null
+          form_id?: string | null
+          form_name?: string | null
+          lead_id: string
+          nome?: string | null
+          respostas?: Json | null
+          synced_at?: string
+          telefone_norm?: string | null
+          telefone_raw?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          ad_name?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          cidade?: string | null
+          created_time?: string | null
+          email?: string | null
+          form_id?: string | null
+          form_name?: string | null
+          lead_id?: string
+          nome?: string | null
+          respostas?: Json | null
+          synced_at?: string
+          telefone_norm?: string | null
+          telefone_raw?: string | null
+        }
+        Relationships: []
+      }
       meta_sync_state: {
         Row: {
           key: string
@@ -479,6 +599,10 @@ export type Database = {
           campaign_id: string | null
           campaign_name: string | null
           campaign_name_meta: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          contato_telefone_norm: string | null
           data_criacao: string | null
           dominio: string | null
           fase: string | null
@@ -510,6 +634,10 @@ export type Database = {
           campaign_id?: string | null
           campaign_name?: string | null
           campaign_name_meta?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contato_telefone_norm?: string | null
           data_criacao?: string | null
           dominio?: string | null
           fase?: string | null
@@ -541,6 +669,10 @@ export type Database = {
           campaign_id?: string | null
           campaign_name?: string | null
           campaign_name_meta?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contato_telefone_norm?: string | null
           data_criacao?: string | null
           dominio?: string | null
           fase?: string | null
@@ -640,6 +772,8 @@ export type Database = {
           ultimo: string
         }[]
       }
+      norm_phone: { Args: { _v: string }; Returns: string }
+      rebuild_lead_match: { Args: never; Returns: Json }
       resolve_form_label_to_campaign: {
         Args: { _label: string }
         Returns: {
