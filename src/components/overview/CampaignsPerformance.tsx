@@ -82,15 +82,19 @@ export function CampaignsPerformance({
   loading,
   error,
   onSelect,
+  stages = [],
 }: {
   rows: CampaignRow[];
   loading?: boolean;
   error?: boolean;
   onSelect?: (row: CampaignRow) => void;
+  /** Etapas reais do funil Comercial do Bitrix, na ordem do quadro */
+  stages?: StageCol[];
 }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "spend", dir: "desc" });
   const [page, setPage] = useState(0);
+  const stageCount = (r: CampaignRow, id: string) => r.crm?.by_stage?.[id] ?? (r.crm ? 0 : null);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
