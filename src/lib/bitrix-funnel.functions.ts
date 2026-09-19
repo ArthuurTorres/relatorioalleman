@@ -63,6 +63,38 @@ export const getBitrixPipelineFunnel = createServerFn({ method: "POST" })
     return result as BitrixPipelineFunnel;
   });
 
+export type StageMapRow = {
+  stage_id: string;
+  stage_name: string;
+  sort: number;
+  pipeline_id: string;
+  pipeline_name: string;
+  funnel_step: string | null;
+  step_rank: number;
+  leads: number;
+};
+
+export type StageMapping = {
+  total: number;
+  stages: StageMapRow[];
+  orphans: { fase: string | null; leads: number }[];
+};
+
+/** Mapa de/para: etapas reais do Bitrix → etapa do funil comercial, com leads no período. */
+export const getStageMapping = createServerFn({ method: "POST" })
+  .inputValidator((d) => FunnelSchema.parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const supabase = await getClient();
+    const { data: result, error } = await (supabase as any).rpc("get_stage_mapping", {
+      p_from: data.from,
+      p_to: data.to,
+      p_origem: data.origem ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return result as StageMapping;
+  });
+
 /** Leads nominais de uma etapa específica do Bitrix. */
 export const getBitrixStageLeads = createServerFn({ method: "POST" })
   .inputValidator((d) => StageLeadsSchema.parse(d))
