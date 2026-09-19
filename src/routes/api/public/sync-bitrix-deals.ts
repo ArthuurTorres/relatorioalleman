@@ -2,6 +2,31 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type BitrixDeal = Record<string, unknown>;
 
+/**
+ * Único lugar para configurar os campos do negócio no Bitrix que trazem a campanha.
+ * Assim que o CRM criar os campos (integração do formulário de Lead do Meta/Adveronix),
+ * basta informar aqui o ID de cada campo (ex.: "UF_CRM_1790000000001").
+ * Campaign ID é sempre tratado como texto. Vazio = campo ainda não existe no CRM.
+ */
+const BITRIX_CAMPAIGN_FIELDS = {
+  campaign_id: "",
+  adset_id: "",
+  ad_id: "",
+  campaign_name: "",
+} as const;
+
+function readField(deal: BitrixDeal, field: string, extra: Record<string, string>, extraKeys: string[]): string | null {
+  if (field) {
+    const v = deal[field];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  for (const k of extraKeys) {
+    const v = extra[k];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  return null;
+}
+
 function parseExtraParams(url: string): Record<string, string> {
   const params: Record<string, string> = {};
   try {
