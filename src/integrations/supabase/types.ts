@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      bitrix_pipelines: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bitrix_stage_map: {
         Row: {
           created_at: string
@@ -37,6 +61,36 @@ export type Database = {
           label?: string | null
           stage_id?: string
           step_rank?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bitrix_stages: {
+        Row: {
+          created_at: string
+          name: string
+          pipeline_id: string
+          semantics: string | null
+          sort: number
+          stage_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          pipeline_id: string
+          semantics?: string | null
+          sort?: number
+          stage_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          pipeline_id?: string
+          semantics?: string | null
+          sort?: number
+          stage_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -515,6 +569,19 @@ export type Database = {
     }
     Functions: {
       extract_form_keyword: { Args: { _label: string }; Returns: string }
+      get_bitrix_pipeline_funnel: {
+        Args: { p_from: string; p_origem?: string[]; p_to: string }
+        Returns: Json
+      }
+      get_bitrix_stage_leads: {
+        Args: {
+          p_from: string
+          p_origem?: string[]
+          p_stage_id: string
+          p_to: string
+        }
+        Returns: Json
+      }
       get_campaign_crm_funnel: {
         Args: { p_from: string; p_to: string }
         Returns: Json
