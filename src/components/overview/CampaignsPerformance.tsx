@@ -32,14 +32,18 @@ export type CampaignRow = {
     perdidos: number;
     sem_etapa: number;
     receita: number;
+    by_stage?: Record<string, number> | null;
+    fora_funil?: number;
   } | null;
 };
+
+export type StageCol = { stage_id: string; name: string };
 
 type SortKey = "campanha" | "operadora" | "canal" | "spend" | "leads" | "cpl" | "status";
 
 const PAGE_SIZE = 10;
 
-const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
+const HEAD_COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "campanha", label: "Campanha" },
   { key: "operadora", label: "Operadora" },
   { key: "canal", label: "Canal" },
@@ -47,12 +51,12 @@ const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "leads", label: "Leads válidos", align: "right" },
   { key: "cpl", label: "CPL", align: "right" },
   { key: null, label: "No Bitrix", align: "right" },
-  { key: null, label: "Qualificados", align: "right" },
-  { key: null, label: "Contatados", align: "right" },
-  { key: null, label: "Negociação", align: "right" },
-  { key: null, label: "Vendas", align: "right" },
+];
+
+const TAIL_COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
+  { key: null, label: "Outros funis", align: "right" },
+  { key: null, label: "Sem etapa", align: "right" },
   { key: null, label: "Identificação", align: "right" },
-  { key: null, label: "Aproveitamento", align: "right" },
   { key: null, label: "Receita", align: "right" },
   { key: null, label: "ROAS", align: "right" },
   { key: "status", label: "Status" },
@@ -78,15 +82,19 @@ export function CampaignsPerformance({
   loading,
   error,
   onSelect,
+  stages = [],
 }: {
   rows: CampaignRow[];
   loading?: boolean;
   error?: boolean;
   onSelect?: (row: CampaignRow) => void;
+  /** Etapas reais do funil Comercial do Bitrix, na ordem do quadro */
+  stages?: StageCol[];
 }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "spend", dir: "desc" });
   const [page, setPage] = useState(0);
+  const stageCount = (r: CampaignRow, id: string) => r.crm?.by_stage?.[id] ?? (r.crm ? 0 : null);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -115,13 +123,18 @@ export function CampaignsPerformance({
     downloadCsv(
       "desempenho-campanhas.csv",
       toCsv(
-        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix", "Qualificados", "Contatados", "Negociação", "Vendas", "Perdidos", "Sem etapa", "Identificação", "Aproveitamento", "Receita", "ROAS", "Status"],
+        [
+          "Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix",
+          ...stages.map((s) => s.name),
+          "Outros funis", "Sem etapa", "Identificação", "Receita", "ROAS", "Status",
+        ],
         filtered.map((r) => [
           r.campanha, r.operadora, r.canal,
           r.spend ?? "", r.leads, r.cpl?.toFixed(2) ?? "",
-          r.crm?.leads_bitrix ?? "", r.crm?.qualificados ?? "", r.crm?.contatados ?? "",
-          r.crm?.negociacao ?? "", r.crm?.vendas ?? "", r.crm?.perdidos ?? "", r.crm?.sem_etapa ?? "",
-          ratio(r.crm?.leads_bitrix, r.leads), ratio(r.crm?.qualificados, r.crm?.leads_bitrix),
+          r.crm?.leads_bitrix ?? "",
+          ...stages.map((s) => stageCount(r, s.stage_id) ?? ""),
+          r.crm?.fora_funil ?? "", r.crm?.sem_etapa ?? "",
+          ratio(r.crm?.leads_bitrix, r.leads),
           r.crm?.receita ?? "", r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "",
           r.status ?? "",
         ]),
@@ -165,12 +178,16 @@ export function CampaignsPerformance({
       ) : (
         <>
           <div className="mt-3 max-h-[460px] overflow-auto rounded-lg border border-white/5">
-            <table className="w-full min-w-[1400px] text-[12.5px]">
+            <table className="w-full min-w-[2200px] text-[12.5px]">
               <thead className="sticky top-0 z-10 bg-card">
                 <tr>
-                  {COLS.map((c) => (
+                  {[
+                    ...HEAD_COLS,
+                    ...stages.map((s) => ({ key: null as SortKey | null, label: s.name, align: "right" as const })),
+                    ...TAIL_COLS,
+                  ].map((c, i) => (
                     <th
-                      key={c.label}
+                      key={`${c.label}-${i}`}
                       className={`whitespace-nowrap px-3 py-2 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground ${c.align === "right" ? "text-right" : "text-left"} ${c.key ? "cursor-pointer select-none hover:text-foreground" : ""}`}
                       onClick={() => c.key && toggleSort(c.key)}
                     >
@@ -201,12 +218,21 @@ export function CampaignsPerformance({
                     <td className="px-3 py-2 text-right tabular-nums">{nfmt(r.leads)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.leads_bitrix)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.qualificados)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.contatados)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.negociacao)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.vendas)}</td>
+                    {stages.map((s) => {
+                      const v = stageCount(r, s.stage_id);
+                      return (
+                        <td
+                          key={s.stage_id}
+                          className={`px-3 py-2 text-right tabular-nums ${v ? "" : "text-muted-foreground/50"}`}
+                          title={s.name}
+                        >
+                          {num(v)}
+                        </td>
+                      );
+                    })}
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{num(r.crm?.fora_funil)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{num(r.crm?.sem_etapa)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.leads_bitrix, r.leads)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.qualificados, r.crm?.leads_bitrix)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita ? currency(r.crm.receita) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "—"}</td>
                     <td className="px-3 py-2">

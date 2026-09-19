@@ -457,6 +457,7 @@ export function OverviewTab({
           loading={perf.isLoading || googleLoading}
           error={perf.isError && google.isError}
           onSelect={(r) => r.campaignId && setSelected(r)}
+          stages={crm.data?.stages ?? []}
         />
         {crm.data && (
           <p className="mt-1 text-[11px] text-muted-foreground/70">

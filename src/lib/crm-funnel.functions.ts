@@ -6,6 +6,8 @@ import { getClient } from "@/lib/utm.server";
 const RangeSchema = z.object({ from: z.string(), to: z.string() });
 const LeadsSchema = z.object({ campaignId: z.string(), from: z.string(), to: z.string() });
 
+export type CrmStage = { stage_id: string; name: string };
+
 export type CampaignCrmRow = {
   campaign_id: string;
   campaign_name: string;
@@ -21,9 +23,15 @@ export type CampaignCrmRow = {
   por_manual: number;
   por_nome: number;
   receita: number;
+  /** Leads por etapa real do funil Comercial do Bitrix (stage_id → quantidade) */
+  by_stage?: Record<string, number> | null;
+  /** Leads em etapas de outros funis */
+  fora_funil?: number;
 };
 
 export type CampaignCrmFunnel = {
+  /** Etapas reais do funil Comercial, na ordem do quadro do Bitrix */
+  stages: CrmStage[];
   byCampaign: CampaignCrmRow[];
   totals: {
     leads_bitrix: number;
