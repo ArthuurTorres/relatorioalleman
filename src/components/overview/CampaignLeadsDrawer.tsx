@@ -134,7 +134,9 @@ export function CampaignLeadsDrawer({
                 <tbody>
                   {leads.map((l) => (
                     <tr key={l.bitrix_deal_id} className="border-t border-white/5">
-                      <td className="max-w-[220px] truncate px-3 py-2" title={l.titulo ?? ""}>{l.titulo ?? "—"}</td>
+                      <td className="max-w-[200px] truncate px-3 py-2" title={l.titulo ?? ""}>{l.titulo ?? "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">{l.telefone ?? "—"}</td>
+                      <td className="max-w-[140px] truncate px-3 py-2 text-muted-foreground">{l.cidade ?? "—"}</td>
                       <td className="px-3 py-2 tabular-nums text-muted-foreground">{l.bitrix_deal_id}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{fmtDate(l.data_criacao)}</td>
                       <td className="px-3 py-2 text-muted-foreground">{l.stage_label ?? l.fase ?? "—"}</td>
