@@ -25,7 +25,14 @@ export type CampaignCrmRow = {
 
 export type CampaignCrmFunnel = {
   byCampaign: CampaignCrmRow[];
-  totals: { leads_bitrix: number; leads_identificados: number; leads_nao_identificados: number };
+  totals: {
+    leads_bitrix: number;
+    leads_identificados: number;
+    leads_nao_identificados: number;
+    por_telefone?: number;
+    por_email?: number;
+    por_nome?: number;
+  };
 };
 
 export type CampaignCrmLead = {
@@ -39,6 +46,8 @@ export type CampaignCrmLead = {
   funnel_step: string;
   stage_label: string | null;
   valor: number | null;
+  telefone?: string | null;
+  cidade?: string | null;
 };
 
 /** Cruzamento agregado: campanhas do Meta × leads do Bitrix (por Campaign ID). */

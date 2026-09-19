@@ -71,9 +71,9 @@ export function CampaignLeadsDrawer({
     downloadCsv(
       `leads-${campaignName.slice(0, 40).replace(/[^\w-]+/g, "-")}.csv`,
       toCsv(
-        ["Nome", "Deal ID", "Data de entrada", "Campaign ID", "Campaign Name", "Etapa atual", "Qualificação", "Status", "Valor"],
+        ["Nome", "Telefone", "Cidade", "Deal ID", "Data de entrada", "Campaign ID", "Campaign Name", "Etapa atual", "Qualificação", "Status", "Valor"],
         leads.map((l) => [
-          l.titulo ?? "", l.bitrix_deal_id, fmtDate(l.data_criacao),
+          l.titulo ?? "", l.telefone ?? "", l.cidade ?? "", l.bitrix_deal_id, fmtDate(l.data_criacao),
           l.campaign_id ?? "", l.campaign_name ?? "", l.stage_label ?? l.fase ?? "",
           STEP_LABEL[l.funnel_step] ?? l.funnel_step,
           l.funnel_step === "venda" ? "Ganho" : l.funnel_step === "perdido" ? "Perdido" : "Em andamento",
@@ -123,10 +123,10 @@ export function CampaignLeadsDrawer({
             <p className="py-8 text-center text-[12px] text-muted-foreground">Nenhum lead relacionado a esta campanha no período.</p>
           ) : (
             <div className="mt-3 max-h-[420px] overflow-auto rounded-lg border border-white/5">
-              <table className="w-full min-w-[640px] text-[12px]">
+              <table className="w-full min-w-[860px] text-[12px]">
                 <thead className="sticky top-0 bg-card">
                   <tr>
-                    {["Nome", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
+                    {["Nome", "Telefone", "Cidade", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
                       <th key={h} className="whitespace-nowrap px-3 py-2 text-left text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">{h}</th>
                     ))}
                   </tr>
@@ -134,7 +134,9 @@ export function CampaignLeadsDrawer({
                 <tbody>
                   {leads.map((l) => (
                     <tr key={l.bitrix_deal_id} className="border-t border-white/5">
-                      <td className="max-w-[220px] truncate px-3 py-2" title={l.titulo ?? ""}>{l.titulo ?? "—"}</td>
+                      <td className="max-w-[200px] truncate px-3 py-2" title={l.titulo ?? ""}>{l.titulo ?? "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">{l.telefone ?? "—"}</td>
+                      <td className="max-w-[140px] truncate px-3 py-2 text-muted-foreground">{l.cidade ?? "—"}</td>
                       <td className="px-3 py-2 tabular-nums text-muted-foreground">{l.bitrix_deal_id}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{fmtDate(l.data_criacao)}</td>
                       <td className="px-3 py-2 text-muted-foreground">{l.stage_label ?? l.fase ?? "—"}</td>
