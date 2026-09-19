@@ -20,6 +20,19 @@ export type CampaignRow = {
   receita: number | null;
   roas: number | null;
   status: string | null;
+  /** ID da campanha (texto) — chave do cruzamento com os leads do CRM */
+  campaignId?: string | null;
+  /** Dados comerciais cruzados (leads do Bitrix por etapa) */
+  crm?: {
+    leads_bitrix: number;
+    qualificados: number;
+    contatados: number;
+    negociacao: number;
+    vendas: number;
+    perdidos: number;
+    sem_etapa: number;
+    receita: number;
+  } | null;
 };
 
 type SortKey = "campanha" | "operadora" | "canal" | "spend" | "leads" | "cpl" | "status";
@@ -33,9 +46,13 @@ const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "spend", label: "Investimento", align: "right" },
   { key: "leads", label: "Leads válidos", align: "right" },
   { key: "cpl", label: "CPL", align: "right" },
-  { key: null, label: "Contratos", align: "right" },
-  { key: null, label: "Vidas", align: "right" },
-  { key: null, label: "Conversão", align: "right" },
+  { key: null, label: "No Bitrix", align: "right" },
+  { key: null, label: "Qualificados", align: "right" },
+  { key: null, label: "Contatados", align: "right" },
+  { key: null, label: "Negociação", align: "right" },
+  { key: null, label: "Vendas", align: "right" },
+  { key: null, label: "Identificação", align: "right" },
+  { key: null, label: "Aproveitamento", align: "right" },
   { key: null, label: "Receita", align: "right" },
   { key: null, label: "ROAS", align: "right" },
   { key: "status", label: "Status" },
@@ -45,6 +62,15 @@ function CanalIcon({ canal }: { canal: string }) {
   if (canal.startsWith("Meta")) return <MetaIcon className="h-4.5 w-4.5 shrink-0" />;
   if (canal.startsWith("Google")) return <GoogleAdsIcon className="h-4.5 w-4.5 shrink-0" />;
   return null;
+}
+
+function ratio(n: number | null | undefined, d: number | null | undefined) {
+  if (!d || n == null) return "—";
+  return `${((n / d) * 100).toFixed(1)}%`;
+}
+
+function num(v: number | null | undefined) {
+  return v == null ? "—" : nfmt(v);
 }
 
 export function CampaignsPerformance({
