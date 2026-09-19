@@ -71,9 +71,9 @@ export function CampaignLeadsDrawer({
     downloadCsv(
       `leads-${campaignName.slice(0, 40).replace(/[^\w-]+/g, "-")}.csv`,
       toCsv(
-        ["Nome", "Deal ID", "Data de entrada", "Campaign ID", "Campaign Name", "Etapa atual", "Qualificação", "Status", "Valor"],
+        ["Nome", "Telefone", "Cidade", "Deal ID", "Data de entrada", "Campaign ID", "Campaign Name", "Etapa atual", "Qualificação", "Status", "Valor"],
         leads.map((l) => [
-          l.titulo ?? "", l.bitrix_deal_id, fmtDate(l.data_criacao),
+          l.titulo ?? "", l.telefone ?? "", l.cidade ?? "", l.bitrix_deal_id, fmtDate(l.data_criacao),
           l.campaign_id ?? "", l.campaign_name ?? "", l.stage_label ?? l.fase ?? "",
           STEP_LABEL[l.funnel_step] ?? l.funnel_step,
           l.funnel_step === "venda" ? "Ganho" : l.funnel_step === "perdido" ? "Perdido" : "Em andamento",
