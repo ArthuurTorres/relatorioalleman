@@ -218,12 +218,21 @@ export function CampaignsPerformance({
                     <td className="px-3 py-2 text-right tabular-nums">{nfmt(r.leads)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.leads_bitrix)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.qualificados)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.contatados)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.negociacao)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.vendas)}</td>
+                    {stages.map((s) => {
+                      const v = stageCount(r, s.stage_id);
+                      return (
+                        <td
+                          key={s.stage_id}
+                          className={`px-3 py-2 text-right tabular-nums ${v ? "" : "text-muted-foreground/50"}`}
+                          title={s.name}
+                        >
+                          {num(v)}
+                        </td>
+                      );
+                    })}
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{num(r.crm?.fora_funil)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{num(r.crm?.sem_etapa)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.leads_bitrix, r.leads)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.qualificados, r.crm?.leads_bitrix)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita ? currency(r.crm.receita) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "—"}</td>
                     <td className="px-3 py-2">
