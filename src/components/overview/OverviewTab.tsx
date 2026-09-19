@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMetaPerformance } from "@/lib/meta.functions";
 import { getGoogleAdsPerformance } from "@/lib/google-ads.functions";
 import { getSyncStatus } from "@/lib/sync-status.functions";
+import { getCampaignCrmFunnel, type CampaignCrmRow } from "@/lib/crm-funnel.functions";
 import type { Filters } from "@/lib/utm.functions";
 import { ExecutiveKpis, type Kpi } from "./ExecutiveKpis";
 import { InvestLeadsChart } from "./InvestLeadsChart";
@@ -12,6 +13,7 @@ import { LeadGoals } from "./LeadGoals";
 import { ChannelComparison, type ChannelRow } from "./ChannelComparison";
 import { IntegrationsHealth, type IntegrationRow } from "./IntegrationsHealth";
 import { CampaignsPerformance, type CampaignRow } from "./CampaignsPerformance";
+import { CampaignLeadsDrawer } from "./CampaignLeadsDrawer";
 import { CHART, currency, nfmt, operadoraFromCampaign, variation } from "@/lib/dashboard-utils";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
 
@@ -57,6 +59,8 @@ export function OverviewTab({
   const perfFn = useServerFn(getMetaPerformance);
   const googleFn = useServerFn(getGoogleAdsPerformance);
   const syncFn = useServerFn(getSyncStatus);
+  const crmFn = useServerFn(getCampaignCrmFunnel);
+  const [selected, setSelected] = useState<CampaignRow | null>(null);
   const metaEnabled = !filters.origem?.length || filters.origem.includes("Meta");
   const googleEnabled = !filters.origem?.length || filters.origem.includes("Google");
 
