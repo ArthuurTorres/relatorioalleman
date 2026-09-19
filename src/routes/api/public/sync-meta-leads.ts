@@ -165,7 +165,8 @@ async function handler(request: Request): Promise<Response> {
 
   let match: Record<string, number> | null = null;
   try {
-    const { data } = await (supabaseAdmin as any).rpc("rebuild_lead_match");
+    const { data, error } = await (supabaseAdmin as any).rpc("rebuild_lead_match");
+    if (error) errors.push(`match: ${error.message}`);
     match = (data ?? null) as Record<string, number> | null;
   } catch (e: any) {
     errors.push(`match: ${String(e?.message || e)}`);
