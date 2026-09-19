@@ -20,6 +20,19 @@ export type CampaignRow = {
   receita: number | null;
   roas: number | null;
   status: string | null;
+  /** ID da campanha (texto) — chave do cruzamento com os leads do CRM */
+  campaignId?: string | null;
+  /** Dados comerciais cruzados (leads do Bitrix por etapa) */
+  crm?: {
+    leads_bitrix: number;
+    qualificados: number;
+    contatados: number;
+    negociacao: number;
+    vendas: number;
+    perdidos: number;
+    sem_etapa: number;
+    receita: number;
+  } | null;
 };
 
 type SortKey = "campanha" | "operadora" | "canal" | "spend" | "leads" | "cpl" | "status";
@@ -33,9 +46,13 @@ const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "spend", label: "Investimento", align: "right" },
   { key: "leads", label: "Leads válidos", align: "right" },
   { key: "cpl", label: "CPL", align: "right" },
-  { key: null, label: "Contratos", align: "right" },
-  { key: null, label: "Vidas", align: "right" },
-  { key: null, label: "Conversão", align: "right" },
+  { key: null, label: "No Bitrix", align: "right" },
+  { key: null, label: "Qualificados", align: "right" },
+  { key: null, label: "Contatados", align: "right" },
+  { key: null, label: "Negociação", align: "right" },
+  { key: null, label: "Vendas", align: "right" },
+  { key: null, label: "Identificação", align: "right" },
+  { key: null, label: "Aproveitamento", align: "right" },
   { key: null, label: "Receita", align: "right" },
   { key: null, label: "ROAS", align: "right" },
   { key: "status", label: "Status" },
@@ -47,14 +64,25 @@ function CanalIcon({ canal }: { canal: string }) {
   return null;
 }
 
+function ratio(n: number | null | undefined, d: number | null | undefined) {
+  if (!d || n == null) return "—";
+  return `${((n / d) * 100).toFixed(1)}%`;
+}
+
+function num(v: number | null | undefined) {
+  return v == null ? "—" : nfmt(v);
+}
+
 export function CampaignsPerformance({
   rows,
   loading,
   error,
+  onSelect,
 }: {
   rows: CampaignRow[];
   loading?: boolean;
   error?: boolean;
+  onSelect?: (row: CampaignRow) => void;
 }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "spend", dir: "desc" });
@@ -87,15 +115,20 @@ export function CampaignsPerformance({
     downloadCsv(
       "desempenho-campanhas.csv",
       toCsv(
-        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "Contratos", "Vidas", "Conversão", "Receita", "ROAS", "Status"],
+        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix", "Qualificados", "Contatados", "Negociação", "Vendas", "Perdidos", "Sem etapa", "Identificação", "Aproveitamento", "Receita", "ROAS", "Status"],
         filtered.map((r) => [
           r.campanha, r.operadora, r.canal,
           r.spend ?? "", r.leads, r.cpl?.toFixed(2) ?? "",
-          r.contratos ?? "", r.vidas ?? "", r.conversao ?? "", r.receita ?? "", r.roas ?? "", r.status ?? "",
+          r.crm?.leads_bitrix ?? "", r.crm?.qualificados ?? "", r.crm?.contatados ?? "",
+          r.crm?.negociacao ?? "", r.crm?.vendas ?? "", r.crm?.perdidos ?? "", r.crm?.sem_etapa ?? "",
+          ratio(r.crm?.leads_bitrix, r.leads), ratio(r.crm?.qualificados, r.crm?.leads_bitrix),
+          r.crm?.receita ?? "", r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "",
+          r.status ?? "",
         ]),
       ),
     );
   }
+
 
   function toggleSort(key: SortKey) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
@@ -132,7 +165,7 @@ export function CampaignsPerformance({
       ) : (
         <>
           <div className="mt-3 max-h-[460px] overflow-auto rounded-lg border border-white/5">
-            <table className="w-full min-w-[1000px] text-[12.5px]">
+            <table className="w-full min-w-[1400px] text-[12.5px]">
               <thead className="sticky top-0 z-10 bg-card">
                 <tr>
                   {COLS.map((c) => (
@@ -151,7 +184,11 @@ export function CampaignsPerformance({
               </thead>
               <tbody>
                 {slice.map((r) => (
-                  <tr key={`${r.canal}-${r.campanha}`} className="zebra-row border-t border-white/5">
+                  <tr
+                    key={`${r.canal}-${r.campanha}`}
+                    className={`zebra-row border-t border-white/5 ${onSelect ? "cursor-pointer hover:bg-white/[0.04]" : ""}`}
+                    onClick={() => onSelect?.(r)}
+                  >
                     <td className="max-w-[280px] truncate px-3 py-2" title={r.campanha}>{r.campanha}</td>
                     <td className="px-3 py-2 text-muted-foreground">{r.operadora}</td>
 <td className="px-3 py-2 text-muted-foreground">
@@ -163,11 +200,15 @@ export function CampaignsPerformance({
                     <td className="px-3 py-2 text-right tabular-nums">{r.spend == null ? "—" : currency(r.spend)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{nfmt(r.leads)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.leads_bitrix)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.qualificados)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.contatados)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.negociacao)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.vendas)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.leads_bitrix, r.leads)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.qualificados, r.crm?.leads_bitrix)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita ? currency(r.crm.receita) : "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "—"}</td>
                     <td className="px-3 py-2">
                       {r.status ? (
                         <Badge variant={r.status === "ACTIVE" || r.status === "ENABLED" ? "default" : "secondary"} className="text-[10px]">
@@ -199,7 +240,8 @@ export function CampaignsPerformance({
         </>
       )}
       <p className="mt-2 text-[11px] text-muted-foreground/70">
-        No Google Ads, a coluna de leads mostra conversões atribuídas pela plataforma. Contratos, vidas, receita e ROAS aguardam integração comercial.
+        Clique em uma campanha para ver o funil e os leads nominalmente. As colunas comerciais vêm do cruzamento pelo ID da campanha registrado no lead;
+        leads sem esse ID aparecem na linha “Campanha não identificada”.
       </p>
     </div>
   );

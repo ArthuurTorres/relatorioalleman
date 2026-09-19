@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMetaPerformance } from "@/lib/meta.functions";
 import { getGoogleAdsPerformance } from "@/lib/google-ads.functions";
 import { getSyncStatus } from "@/lib/sync-status.functions";
+import { getCampaignCrmFunnel, type CampaignCrmRow } from "@/lib/crm-funnel.functions";
 import type { Filters } from "@/lib/utm.functions";
 import { ExecutiveKpis, type Kpi } from "./ExecutiveKpis";
 import { InvestLeadsChart } from "./InvestLeadsChart";
@@ -12,6 +13,7 @@ import { LeadGoals } from "./LeadGoals";
 import { ChannelComparison, type ChannelRow } from "./ChannelComparison";
 import { IntegrationsHealth, type IntegrationRow } from "./IntegrationsHealth";
 import { CampaignsPerformance, type CampaignRow } from "./CampaignsPerformance";
+import { CampaignLeadsDrawer } from "./CampaignLeadsDrawer";
 import { CHART, currency, nfmt, operadoraFromCampaign, variation } from "@/lib/dashboard-utils";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
 
@@ -57,6 +59,8 @@ export function OverviewTab({
   const perfFn = useServerFn(getMetaPerformance);
   const googleFn = useServerFn(getGoogleAdsPerformance);
   const syncFn = useServerFn(getSyncStatus);
+  const crmFn = useServerFn(getCampaignCrmFunnel);
+  const [selected, setSelected] = useState<CampaignRow | null>(null);
   const metaEnabled = !filters.origem?.length || filters.origem.includes("Meta");
   const googleEnabled = !filters.origem?.length || filters.origem.includes("Google");
 
@@ -102,6 +106,14 @@ export function OverviewTab({
     retry: false,
     refetchInterval: 120_000,
   });
+
+  const crm = useQuery({
+    queryKey: ["campaign-crm-funnel", filters.from, filters.to],
+    queryFn: () => crmFn({ data: { from: filters.from, to: filters.to } }),
+    retry: false,
+  });
+
+
 
   const leadsTotal = dashboard?.summary.total ?? 0;
   const byOrigemK = dashboard?.summary.byOrigem ?? {};
@@ -316,8 +328,14 @@ export function OverviewTab({
     { name: "Sistema comercial (AGSI)", status: "unknown", statusLabel: "Status indisponível", lastSync: "—", note: "Integração não configurada" },
   ];
 
+  const crmByCampaign = useMemo(() => {
+    const map = new Map<string, CampaignCrmRow>();
+    for (const r of crm.data?.byCampaign ?? []) map.set(r.campaign_id, r);
+    return map;
+  }, [crm.data?.byCampaign]);
+
   const campaigns: CampaignRow[] = useMemo(() => {
-    const metaRows = (perf.data?.byCampaign ?? []).map((c) => ({
+    const metaRows: CampaignRow[] = (perf.data?.byCampaign ?? []).map((c) => ({
         campanha: c.campaign_name,
         operadora: operadoraFromCampaign(c.campaign_name),
         canal: "Meta Ads",
@@ -326,8 +344,10 @@ export function OverviewTab({
         cpl: c.cpl ?? null,
         contratos: null, vidas: null, conversao: null, receita: null, roas: null,
         status: c.status ?? null,
+        campaignId: c.campaign_id,
+        crm: crmByCampaign.get(c.campaign_id) ?? null,
       }));
-    const googleRows = (google.data?.campaigns ?? []).map((c) => ({
+    const googleRows: CampaignRow[] = (google.data?.campaigns ?? []).map((c) => ({
       campanha: c.campaignName,
       operadora: operadoraFromCampaign(c.campaignName),
       canal: "Google Ads (atribuído)",
@@ -336,9 +356,27 @@ export function OverviewTab({
       cpl: c.costPerConversion,
       contratos: null, vidas: null, conversao: null, receita: null, roas: null,
       status: c.status,
+      campaignId: null,
+      crm: null,
     }));
-    return [...metaRows, ...googleRows];
-  }, [perf.data?.byCampaign, google.data?.campaigns]);
+    const naoIdent = crmByCampaign.get("__none__");
+    const unmatched: CampaignRow[] = naoIdent
+      ? [{
+          campanha: "Campanha não identificada",
+          operadora: "—",
+          canal: "Sem campanha",
+          spend: null,
+          leads: 0,
+          cpl: null,
+          contratos: null, vidas: null, conversao: null, receita: null, roas: null,
+          status: null,
+          campaignId: "__none__",
+          crm: naoIdent,
+        }]
+      : [];
+    return [...metaRows, ...googleRows, ...unmatched];
+  }, [perf.data?.byCampaign, google.data?.campaigns, crmByCampaign]);
+
 
   return (
     <div className="space-y-5">
@@ -414,8 +452,30 @@ export function OverviewTab({
       </div>
 
       <Panel>
-        <CampaignsPerformance rows={campaigns} loading={perf.isLoading || googleLoading} error={perf.isError && google.isError} />
+        <CampaignsPerformance
+          rows={campaigns}
+          loading={perf.isLoading || googleLoading}
+          error={perf.isError && google.isError}
+          onSelect={(r) => r.campaignId && setSelected(r)}
+        />
+        {crm.data && (
+          <p className="mt-1 text-[11px] text-muted-foreground/70">
+            {nfmt(crm.data.totals.leads_identificados)} de {nfmt(crm.data.totals.leads_bitrix)} leads do período têm campanha identificada
+            ({nfmt(crm.data.totals.leads_nao_identificados)} sem identificação).
+          </p>
+        )}
       </Panel>
+
+      <CampaignLeadsDrawer
+        open={Boolean(selected)}
+        onOpenChange={(v) => !v && setSelected(null)}
+        campaignId={selected?.campaignId ?? null}
+        campaignName={selected?.campanha ?? ""}
+        leadsMeta={selected?.leads ?? null}
+        crm={selected?.crm ?? null}
+        from={filters.from}
+        to={filters.to}
+      />
     </div>
   );
 }

@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      bitrix_stage_map: {
+        Row: {
+          created_at: string
+          funnel_step: string
+          label: string | null
+          stage_id: string
+          step_rank: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          funnel_step: string
+          label?: string | null
+          stage_id: string
+          step_rank?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          funnel_step?: string
+          label?: string | null
+          stage_id?: string
+          step_rank?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaign_lead_map: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          label: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          label: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          label?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       google_ads_campaign_daily: {
         Row: {
           campaign_id: string
@@ -365,11 +416,15 @@ export type Database = {
       utm_conversions: {
         Row: {
           ad_id: string | null
+          ad_id_meta: string | null
           ad_name: string | null
           adset_id: string | null
+          adset_id_meta: string | null
           adset_name: string | null
           bitrix_deal_id: string
+          campaign_id: string | null
           campaign_name: string | null
+          campaign_name_meta: string | null
           data_criacao: string | null
           dominio: string | null
           fase: string | null
@@ -392,11 +447,15 @@ export type Database = {
         }
         Insert: {
           ad_id?: string | null
+          ad_id_meta?: string | null
           ad_name?: string | null
           adset_id?: string | null
+          adset_id_meta?: string | null
           adset_name?: string | null
           bitrix_deal_id: string
+          campaign_id?: string | null
           campaign_name?: string | null
+          campaign_name_meta?: string | null
           data_criacao?: string | null
           dominio?: string | null
           fase?: string | null
@@ -419,11 +478,15 @@ export type Database = {
         }
         Update: {
           ad_id?: string | null
+          ad_id_meta?: string | null
           ad_name?: string | null
           adset_id?: string | null
+          adset_id_meta?: string | null
           adset_name?: string | null
           bitrix_deal_id?: string
+          campaign_id?: string | null
           campaign_name?: string | null
+          campaign_name_meta?: string | null
           data_criacao?: string | null
           dominio?: string | null
           fase?: string | null
@@ -452,6 +515,14 @@ export type Database = {
     }
     Functions: {
       extract_form_keyword: { Args: { _label: string }; Returns: string }
+      get_campaign_crm_funnel: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
+      get_campaign_crm_leads: {
+        Args: { p_campaign_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       get_google_detail: {
         Args: {
           p_dominio?: string[]
@@ -507,6 +578,22 @@ export type Database = {
         Returns: {
           campaign_id: string
           source: string
+        }[]
+      }
+      resolved_campaign_leads: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          bitrix_deal_id: string
+          campaign_id: string
+          campaign_name: string
+          data_criacao: string
+          fase: string
+          funnel_step: string
+          match_source: string
+          stage_label: string
+          step_rank: number
+          titulo: string
+          valor: number
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }

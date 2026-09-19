@@ -2,6 +2,31 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type BitrixDeal = Record<string, unknown>;
 
+/**
+ * Único lugar para configurar os campos do negócio no Bitrix que trazem a campanha.
+ * Assim que o CRM criar os campos (integração do formulário de Lead do Meta/Adveronix),
+ * basta informar aqui o ID de cada campo (ex.: "UF_CRM_1790000000001").
+ * Campaign ID é sempre tratado como texto. Vazio = campo ainda não existe no CRM.
+ */
+const BITRIX_CAMPAIGN_FIELDS = {
+  campaign_id: "",
+  adset_id: "",
+  ad_id: "",
+  campaign_name: "",
+} as const;
+
+function readField(deal: BitrixDeal, field: string, extra: Record<string, string>, extraKeys: string[]): string | null {
+  if (field) {
+    const v = deal[field];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  for (const k of extraKeys) {
+    const v = extra[k];
+    if (v != null && String(v).trim() !== "") return String(v).trim();
+  }
+  return null;
+}
+
 function parseExtraParams(url: string): Record<string, string> {
   const params: Record<string, string> = {};
   try {
@@ -121,6 +146,7 @@ async function handler(request: Request): Promise<Response> {
           "UF_CRM_1773253579129", "UF_CRM_1773253633405",
           "UF_CRM_1773253674766", "UF_CRM_1773253691932", "UF_CRM_1773253705599",
           "DATE_CREATE",
+          ...Object.values(BITRIX_CAMPAIGN_FIELDS).filter(Boolean),
         ],
         start,
       }),
@@ -170,6 +196,10 @@ async function handler(request: Request): Promise<Response> {
         campaign_name: extra.campaign_name || extra.campaignname || fbclidLabel || null,
         placement: extra.placement || null,
         site_source_name: extra.site_source_name || null,
+        campaign_id: readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_id, extra, ["campaign_id", "campaignid"]),
+        adset_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.adset_id, extra, ["adset_id", "adsetid"]),
+        ad_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.ad_id, extra, ["ad_id", "adid"]),
+        campaign_name_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_name, extra, ["campaign_name", "campaignname"]),
         fbclid: fbclidReal,
         data_criacao: (deal.DATE_CREATE as string) || null,
         synced_at: new Date().toISOString(),
