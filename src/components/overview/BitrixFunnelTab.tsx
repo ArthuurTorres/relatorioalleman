@@ -171,6 +171,8 @@ export function BitrixFunnelTab({ filters }: Props) {
         </CardContent>
       </Card>
 
+      <StageMapping filters={filters} origem={origem} />
+
       <StageLeadsSheet
         stage={stage}
         pipelineName={active?.name ?? ""}
