@@ -787,12 +787,14 @@ export type Database = {
           bitrix_deal_id: string
           campaign_id: string
           campaign_name: string
+          cidade: string
           data_criacao: string
           fase: string
           funnel_step: string
           match_source: string
           stage_label: string
           step_rank: number
+          telefone: string
           titulo: string
           valor: number
         }[]
