@@ -56,6 +56,47 @@ function isRealFbclid(v: string | null | undefined): boolean {
 }
 
 
+/** Mesma regra da função norm_phone no banco: DDD + os 8 últimos dígitos. */
+function normPhone(v: string | null | undefined): string | null {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length >= 12 && d.startsWith("55")) d = d.slice(2);
+  if (d.length < 10) return null;
+  return d.slice(0, 2) + d.slice(-8);
+}
+
+type Contato = { nome: string | null; telefone: string | null; email: string | null };
+
+/** Busca em lote os contatos ligados aos negócios (nome, telefone e e-mail). */
+async function fetchContatos(webhookBase: string, ids: string[]): Promise<Map<string, Contato>> {
+  const map = new Map<string, Contato>();
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    try {
+      const r = await fetch(`${webhookBase}crm.contact.list.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filter: { ID: chunk }, select: ["ID", "NAME", "LAST_NAME", "PHONE", "EMAIL"] }),
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      for (const c of (j.result || []) as Array<Record<string, any>>) {
+        const nome = [c.NAME, c.LAST_NAME]
+          .map((x) => String(x ?? "").replace(/\u00a0/g, "").trim())
+          .filter(Boolean)
+          .join(" ");
+        map.set(String(c.ID), {
+          nome: nome || null,
+          telefone: c.PHONE?.[0]?.VALUE ? String(c.PHONE[0].VALUE) : null,
+          email: c.EMAIL?.[0]?.VALUE ? String(c.EMAIL[0].VALUE) : null,
+        });
+      }
+    } catch {
+      /* segue sem os contatos deste lote */
+    }
+  }
+  return map;
+}
+
 function extrairDominio(url: string): string | null {
   try {
     if (!url) return null;
@@ -210,7 +251,13 @@ async function handler(request: Request): Promise<Response> {
     const deals: BitrixDeal[] = data.result || [];
     pages++;
 
+    const contatos = await fetchContatos(
+      webhookBase,
+      Array.from(new Set(deals.map((d) => String(d.CONTACT_ID ?? "")).filter((x) => x && x !== "0"))),
+    );
+
     const rows = deals.map((deal) => {
+      const contato = contatos.get(String(deal.CONTACT_ID ?? "")) ?? null;
       const urlPagina = (deal.UF_CRM_1773253633405 as string) || "";
       const extra = parseExtraParams(urlPagina);
       const rawFbclid = extra.fbclid || (deal.UF_CRM_1773253705599 as string) || null;
@@ -250,6 +297,10 @@ async function handler(request: Request): Promise<Response> {
         adset_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.adset_id, extra, ["adset_id", "adsetid"]),
         ad_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.ad_id, extra, ["ad_id", "adid"]),
         campaign_name_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_name, extra, ["campaign_name", "campaignname"]),
+        contato_nome: contato?.nome ?? null,
+        contato_telefone: contato?.telefone ?? null,
+        contato_telefone_norm: normPhone(contato?.telefone),
+        contato_email: contato?.email ?? null,
         fbclid: fbclidReal,
         data_criacao: (deal.DATE_CREATE as string) || null,
         synced_at: new Date().toISOString(),
@@ -289,9 +340,19 @@ async function handler(request: Request): Promise<Response> {
       last_status: hasMore ? `pages=${pages} synced=${totalSynced}` : `completed synced=${totalSynced}`,
     }, { onConflict: "key" });
 
+  // Reconstrói o cruzamento entre os leads do Meta e os negócios do CRM.
+  let match: Record<string, number> | null = null;
+  try {
+    const { data: m } = await (supabaseAdmin as any).rpc("rebuild_lead_match");
+    match = (m ?? null) as Record<string, number> | null;
+  } catch {
+    /* segue sem recalcular o cruzamento */
+  }
+
   return Response.json({
     ok: true,
     total_synced: totalSynced,
+    match,
     pages,
     took_ms: Date.now() - started,
     done: !hasMore,

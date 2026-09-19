@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicSyncMetaLeadsRouteImport } from './routes/api/public/sync-meta-leads'
 import { Route as ApiPublicSyncMetaRouteImport } from './routes/api/public/sync-meta'
 import { Route as ApiPublicSyncGoogleAdsRouteImport } from './routes/api/public/sync-google-ads'
 import { Route as ApiPublicSyncBitrixDealsRouteImport } from './routes/api/public/sync-bitrix-deals'
@@ -29,6 +30,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSyncMetaLeadsRoute = ApiPublicSyncMetaLeadsRouteImport.update({
+  id: '/api/public/sync-meta-leads',
+  path: '/api/public/sync-meta-leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSyncMetaRoute = ApiPublicSyncMetaRouteImport.update({
@@ -55,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
+  '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByTo {
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
+  '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
+  '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -82,6 +91,7 @@ export interface FileRouteTypes {
     | '/api/public/sync-bitrix-deals'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
+    | '/api/public/sync-meta-leads'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
     | '/api/public/sync-bitrix-deals'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
+    | '/api/public/sync-meta-leads'
   id:
     | '__root__'
     | '/'
@@ -98,6 +109,7 @@ export interface FileRouteTypes {
     | '/api/public/sync-bitrix-deals'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
+    | '/api/public/sync-meta-leads'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,6 +119,7 @@ export interface RootRouteChildren {
   ApiPublicSyncBitrixDealsRoute: typeof ApiPublicSyncBitrixDealsRoute
   ApiPublicSyncGoogleAdsRoute: typeof ApiPublicSyncGoogleAdsRoute
   ApiPublicSyncMetaRoute: typeof ApiPublicSyncMetaRoute
+  ApiPublicSyncMetaLeadsRoute: typeof ApiPublicSyncMetaLeadsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -130,6 +143,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/sync-meta-leads': {
+      id: '/api/public/sync-meta-leads'
+      path: '/api/public/sync-meta-leads'
+      fullPath: '/api/public/sync-meta-leads'
+      preLoaderRoute: typeof ApiPublicSyncMetaLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/sync-meta': {
@@ -163,6 +183,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSyncBitrixDealsRoute: ApiPublicSyncBitrixDealsRoute,
   ApiPublicSyncGoogleAdsRoute: ApiPublicSyncGoogleAdsRoute,
   ApiPublicSyncMetaRoute: ApiPublicSyncMetaRoute,
+  ApiPublicSyncMetaLeadsRoute: ApiPublicSyncMetaLeadsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
