@@ -746,6 +746,10 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
+      get_stage_mapping: {
+        Args: { p_from: string; p_origem?: string[]; p_to: string }
+        Returns: Json
+      }
       get_utm_dashboard_stats: {
         Args: {
           p_dominio?: string[]
