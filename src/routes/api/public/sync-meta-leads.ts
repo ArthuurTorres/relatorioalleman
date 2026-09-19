@@ -163,10 +163,10 @@ async function handler(request: Request): Promise<Response> {
     errors.push(String(e?.message || e));
   }
 
-  let match: unknown = null;
+  let match: Record<string, number> | null = null;
   try {
     const { data } = await (supabaseAdmin as any).rpc("rebuild_lead_match");
-    match = data;
+    match = (data ?? null) as Record<string, number> | null;
   } catch (e: any) {
     errors.push(`match: ${String(e?.message || e)}`);
   }
