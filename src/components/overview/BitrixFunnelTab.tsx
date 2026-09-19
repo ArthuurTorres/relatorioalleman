@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { nfmt, pctfmt, currency, downloadCsv, toCsv } from "@/lib/dashboard-utils";
+import { StageMapping } from "./StageMapping";
 import { Download } from "lucide-react";
 
 type Props = { filters: { from: string; to: string } };
