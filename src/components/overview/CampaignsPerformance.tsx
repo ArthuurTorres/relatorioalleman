@@ -178,12 +178,16 @@ export function CampaignsPerformance({
       ) : (
         <>
           <div className="mt-3 max-h-[460px] overflow-auto rounded-lg border border-white/5">
-            <table className="w-full min-w-[1400px] text-[12.5px]">
+            <table className="w-full min-w-[2200px] text-[12.5px]">
               <thead className="sticky top-0 z-10 bg-card">
                 <tr>
-                  {COLS.map((c) => (
+                  {[
+                    ...HEAD_COLS,
+                    ...stages.map((s) => ({ key: null as SortKey | null, label: s.name, align: "right" as const })),
+                    ...TAIL_COLS,
+                  ].map((c, i) => (
                     <th
-                      key={c.label}
+                      key={`${c.label}-${i}`}
                       className={`whitespace-nowrap px-3 py-2 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground ${c.align === "right" ? "text-right" : "text-left"} ${c.key ? "cursor-pointer select-none hover:text-foreground" : ""}`}
                       onClick={() => c.key && toggleSort(c.key)}
                     >
