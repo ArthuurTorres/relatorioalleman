@@ -316,8 +316,14 @@ export function OverviewTab({
     { name: "Sistema comercial (AGSI)", status: "unknown", statusLabel: "Status indisponível", lastSync: "—", note: "Integração não configurada" },
   ];
 
+  const crmByCampaign = useMemo(() => {
+    const map = new Map<string, CampaignCrmRow>();
+    for (const r of crm.data?.byCampaign ?? []) map.set(r.campaign_id, r);
+    return map;
+  }, [crm.data?.byCampaign]);
+
   const campaigns: CampaignRow[] = useMemo(() => {
-    const metaRows = (perf.data?.byCampaign ?? []).map((c) => ({
+    const metaRows: CampaignRow[] = (perf.data?.byCampaign ?? []).map((c) => ({
         campanha: c.campaign_name,
         operadora: operadoraFromCampaign(c.campaign_name),
         canal: "Meta Ads",
@@ -326,8 +332,10 @@ export function OverviewTab({
         cpl: c.cpl ?? null,
         contratos: null, vidas: null, conversao: null, receita: null, roas: null,
         status: c.status ?? null,
+        campaignId: c.campaign_id,
+        crm: crmByCampaign.get(c.campaign_id) ?? null,
       }));
-    const googleRows = (google.data?.campaigns ?? []).map((c) => ({
+    const googleRows: CampaignRow[] = (google.data?.campaigns ?? []).map((c) => ({
       campanha: c.campaignName,
       operadora: operadoraFromCampaign(c.campaignName),
       canal: "Google Ads (atribuído)",
@@ -336,9 +344,27 @@ export function OverviewTab({
       cpl: c.costPerConversion,
       contratos: null, vidas: null, conversao: null, receita: null, roas: null,
       status: c.status,
+      campaignId: null,
+      crm: null,
     }));
-    return [...metaRows, ...googleRows];
-  }, [perf.data?.byCampaign, google.data?.campaigns]);
+    const naoIdent = crmByCampaign.get("__none__");
+    const unmatched: CampaignRow[] = naoIdent
+      ? [{
+          campanha: "Campanha não identificada",
+          operadora: "—",
+          canal: "Sem campanha",
+          spend: null,
+          leads: 0,
+          cpl: null,
+          contratos: null, vidas: null, conversao: null, receita: null, roas: null,
+          status: null,
+          campaignId: "__none__",
+          crm: naoIdent,
+        }]
+      : [];
+    return [...metaRows, ...googleRows, ...unmatched];
+  }, [perf.data?.byCampaign, google.data?.campaigns, crmByCampaign]);
+
 
   return (
     <div className="space-y-5">
