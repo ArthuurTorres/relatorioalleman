@@ -39,6 +39,7 @@ import { CampaignDetailView } from "@/components/CampaignDetailView";
 import { CampaignComparison } from "@/components/CampaignComparison";
 import { GoalsTab } from "@/components/overview/GoalsTab";
 import { IntegrationsTab } from "@/components/overview/IntegrationsTab";
+import { BitrixFunnelTab } from "@/components/overview/BitrixFunnelTab";
 
 import triveLogo from "@/assets/trive-logo.png.asset.json";
 import allemanLogo from "@/assets/alleman-logo.jpg.asset.json";
@@ -482,6 +483,7 @@ function Dashboard() {
                 <GoogleAdsIcon className="h-5 w-5" /> Google Ads
               </TabsTrigger>
               <TabsTrigger value="comercial">Comercial</TabsTrigger>
+              <TabsTrigger value="funil-bitrix">Funil Bitrix</TabsTrigger>
               <TabsTrigger value="metas">Metas</TabsTrigger>
               <TabsTrigger value="integracoes">Integrações</TabsTrigger>
             </TabsList>
@@ -770,6 +772,10 @@ function Dashboard() {
               ) : (
                 <p className="text-sm text-muted-foreground">Sem dados sincronizados.</p>
               )}
+            </TabsContent>
+
+            <TabsContent value="funil-bitrix">
+              <BitrixFunnelTab filters={f.filters} />
             </TabsContent>
 
             <TabsContent value="metas">
