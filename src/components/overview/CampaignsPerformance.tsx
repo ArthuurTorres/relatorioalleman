@@ -32,14 +32,18 @@ export type CampaignRow = {
     perdidos: number;
     sem_etapa: number;
     receita: number;
+    by_stage?: Record<string, number> | null;
+    fora_funil?: number;
   } | null;
 };
+
+export type StageCol = { stage_id: string; name: string };
 
 type SortKey = "campanha" | "operadora" | "canal" | "spend" | "leads" | "cpl" | "status";
 
 const PAGE_SIZE = 10;
 
-const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
+const HEAD_COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "campanha", label: "Campanha" },
   { key: "operadora", label: "Operadora" },
   { key: "canal", label: "Canal" },
@@ -47,12 +51,12 @@ const COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
   { key: "leads", label: "Leads válidos", align: "right" },
   { key: "cpl", label: "CPL", align: "right" },
   { key: null, label: "No Bitrix", align: "right" },
-  { key: null, label: "Qualificados", align: "right" },
-  { key: null, label: "Contatados", align: "right" },
-  { key: null, label: "Negociação", align: "right" },
-  { key: null, label: "Vendas", align: "right" },
+];
+
+const TAIL_COLS: Array<{ key: SortKey | null; label: string; align?: "right" }> = [
+  { key: null, label: "Outros funis", align: "right" },
+  { key: null, label: "Sem etapa", align: "right" },
   { key: null, label: "Identificação", align: "right" },
-  { key: null, label: "Aproveitamento", align: "right" },
   { key: null, label: "Receita", align: "right" },
   { key: null, label: "ROAS", align: "right" },
   { key: "status", label: "Status" },
