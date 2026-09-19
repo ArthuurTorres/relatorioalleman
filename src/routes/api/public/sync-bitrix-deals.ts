@@ -56,6 +56,47 @@ function isRealFbclid(v: string | null | undefined): boolean {
 }
 
 
+/** Mesma regra da função norm_phone no banco: DDD + os 8 últimos dígitos. */
+function normPhone(v: string | null | undefined): string | null {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length >= 12 && d.startsWith("55")) d = d.slice(2);
+  if (d.length < 10) return null;
+  return d.slice(0, 2) + d.slice(-8);
+}
+
+type Contato = { nome: string | null; telefone: string | null; email: string | null };
+
+/** Busca em lote os contatos ligados aos negócios (nome, telefone e e-mail). */
+async function fetchContatos(webhookBase: string, ids: string[]): Promise<Map<string, Contato>> {
+  const map = new Map<string, Contato>();
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    try {
+      const r = await fetch(`${webhookBase}crm.contact.list.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filter: { ID: chunk }, select: ["ID", "NAME", "LAST_NAME", "PHONE", "EMAIL"] }),
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      for (const c of (j.result || []) as Array<Record<string, any>>) {
+        const nome = [c.NAME, c.LAST_NAME]
+          .map((x) => String(x ?? "").replace(/\u00a0/g, "").trim())
+          .filter(Boolean)
+          .join(" ");
+        map.set(String(c.ID), {
+          nome: nome || null,
+          telefone: c.PHONE?.[0]?.VALUE ? String(c.PHONE[0].VALUE) : null,
+          email: c.EMAIL?.[0]?.VALUE ? String(c.EMAIL[0].VALUE) : null,
+        });
+      }
+    } catch {
+      /* segue sem os contatos deste lote */
+    }
+  }
+  return map;
+}
+
 function extrairDominio(url: string): string | null {
   try {
     if (!url) return null;
