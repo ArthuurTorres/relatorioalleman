@@ -77,10 +77,12 @@ export function CampaignsPerformance({
   rows,
   loading,
   error,
+  onSelect,
 }: {
   rows: CampaignRow[];
   loading?: boolean;
   error?: boolean;
+  onSelect?: (row: CampaignRow) => void;
 }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "spend", dir: "desc" });
@@ -113,15 +115,20 @@ export function CampaignsPerformance({
     downloadCsv(
       "desempenho-campanhas.csv",
       toCsv(
-        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "Contratos", "Vidas", "Conversão", "Receita", "ROAS", "Status"],
+        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix", "Qualificados", "Contatados", "Negociação", "Vendas", "Perdidos", "Sem etapa", "Identificação", "Aproveitamento", "Receita", "ROAS", "Status"],
         filtered.map((r) => [
           r.campanha, r.operadora, r.canal,
           r.spend ?? "", r.leads, r.cpl?.toFixed(2) ?? "",
-          r.contratos ?? "", r.vidas ?? "", r.conversao ?? "", r.receita ?? "", r.roas ?? "", r.status ?? "",
+          r.crm?.leads_bitrix ?? "", r.crm?.qualificados ?? "", r.crm?.contatados ?? "",
+          r.crm?.negociacao ?? "", r.crm?.vendas ?? "", r.crm?.perdidos ?? "", r.crm?.sem_etapa ?? "",
+          ratio(r.crm?.leads_bitrix, r.leads), ratio(r.crm?.qualificados, r.crm?.leads_bitrix),
+          r.crm?.receita ?? "", r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "",
+          r.status ?? "",
         ]),
       ),
     );
   }
+
 
   function toggleSort(key: SortKey) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
