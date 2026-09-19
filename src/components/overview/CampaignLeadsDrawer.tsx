@@ -126,7 +126,7 @@ export function CampaignLeadsDrawer({
               <table className="w-full min-w-[640px] text-[12px]">
                 <thead className="sticky top-0 bg-card">
                   <tr>
-                    {["Nome", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
+                    {["Nome", "Telefone", "Cidade", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
                       <th key={h} className="whitespace-nowrap px-3 py-2 text-left text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">{h}</th>
                     ))}
                   </tr>
