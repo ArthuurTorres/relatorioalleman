@@ -123,13 +123,18 @@ export function CampaignsPerformance({
     downloadCsv(
       "desempenho-campanhas.csv",
       toCsv(
-        ["Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix", "Qualificados", "Contatados", "Negociação", "Vendas", "Perdidos", "Sem etapa", "Identificação", "Aproveitamento", "Receita", "ROAS", "Status"],
+        [
+          "Campanha", "Operadora", "Canal", "Investimento", "Leads válidos", "CPL", "No Bitrix",
+          ...stages.map((s) => s.name),
+          "Outros funis", "Sem etapa", "Identificação", "Receita", "ROAS", "Status",
+        ],
         filtered.map((r) => [
           r.campanha, r.operadora, r.canal,
           r.spend ?? "", r.leads, r.cpl?.toFixed(2) ?? "",
-          r.crm?.leads_bitrix ?? "", r.crm?.qualificados ?? "", r.crm?.contatados ?? "",
-          r.crm?.negociacao ?? "", r.crm?.vendas ?? "", r.crm?.perdidos ?? "", r.crm?.sem_etapa ?? "",
-          ratio(r.crm?.leads_bitrix, r.leads), ratio(r.crm?.qualificados, r.crm?.leads_bitrix),
+          r.crm?.leads_bitrix ?? "",
+          ...stages.map((s) => stageCount(r, s.stage_id) ?? ""),
+          r.crm?.fora_funil ?? "", r.crm?.sem_etapa ?? "",
+          ratio(r.crm?.leads_bitrix, r.leads),
           r.crm?.receita ?? "", r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "",
           r.status ?? "",
         ]),
