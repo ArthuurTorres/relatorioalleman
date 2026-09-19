@@ -251,7 +251,13 @@ async function handler(request: Request): Promise<Response> {
     const deals: BitrixDeal[] = data.result || [];
     pages++;
 
+    const contatos = await fetchContatos(
+      webhookBase,
+      Array.from(new Set(deals.map((d) => String(d.CONTACT_ID ?? "")).filter((x) => x && x !== "0"))),
+    );
+
     const rows = deals.map((deal) => {
+      const contato = contatos.get(String(deal.CONTACT_ID ?? "")) ?? null;
       const urlPagina = (deal.UF_CRM_1773253633405 as string) || "";
       const extra = parseExtraParams(urlPagina);
       const rawFbclid = extra.fbclid || (deal.UF_CRM_1773253705599 as string) || null;
