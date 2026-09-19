@@ -340,9 +340,19 @@ async function handler(request: Request): Promise<Response> {
       last_status: hasMore ? `pages=${pages} synced=${totalSynced}` : `completed synced=${totalSynced}`,
     }, { onConflict: "key" });
 
+  // Reconstrói o cruzamento entre os leads do Meta e os negócios do CRM.
+  let match: Record<string, number> | null = null;
+  try {
+    const { data: m } = await (supabaseAdmin as any).rpc("rebuild_lead_match");
+    match = (m ?? null) as Record<string, number> | null;
+  } catch {
+    /* segue sem recalcular o cruzamento */
+  }
+
   return Response.json({
     ok: true,
     total_synced: totalSynced,
+    match,
     pages,
     took_ms: Date.now() - started,
     done: !hasMore,
