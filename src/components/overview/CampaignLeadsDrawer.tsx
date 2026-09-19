@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Download } from "lucide-react";
-import { getCampaignCrmLeads, type CampaignCrmRow } from "@/lib/crm-funnel.functions";
+import { getCampaignCrmLeads } from "@/lib/crm-funnel.functions";
+import type { CampaignRow } from "./CampaignsPerformance";
 import { CommercialFunnel } from "./CommercialFunnel";
 import { currency, downloadCsv, nfmt, toCsv } from "@/lib/dashboard-utils";
 
@@ -44,7 +45,7 @@ export function CampaignLeadsDrawer({
   campaignId: string | null;
   campaignName: string;
   leadsMeta: number | null;
-  crm: CampaignCrmRow | null;
+  crm: CampaignRow["crm"];
   from: string;
   to: string;
 }) {
