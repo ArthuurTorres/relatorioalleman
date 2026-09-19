@@ -123,7 +123,7 @@ export function CampaignLeadsDrawer({
             <p className="py-8 text-center text-[12px] text-muted-foreground">Nenhum lead relacionado a esta campanha no período.</p>
           ) : (
             <div className="mt-3 max-h-[420px] overflow-auto rounded-lg border border-white/5">
-              <table className="w-full min-w-[640px] text-[12px]">
+              <table className="w-full min-w-[860px] text-[12px]">
                 <thead className="sticky top-0 bg-card">
                   <tr>
                     {["Nome", "Telefone", "Cidade", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
