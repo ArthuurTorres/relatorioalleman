@@ -107,6 +107,14 @@ export function OverviewTab({
     refetchInterval: 120_000,
   });
 
+  const crm = useQuery({
+    queryKey: ["campaign-crm-funnel", filters.from, filters.to],
+    queryFn: () => crmFn({ data: { from: filters.from, to: filters.to } }),
+    retry: false,
+  });
+
+
+
   const leadsTotal = dashboard?.summary.total ?? 0;
   const byOrigemK = dashboard?.summary.byOrigem ?? {};
   const metaLeads = byOrigemK["Meta"] ?? 0;
