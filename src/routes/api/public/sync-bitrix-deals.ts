@@ -128,6 +128,56 @@ async function handler(request: Request): Promise<Response> {
     /* segue sem os nomes de origem */
   }
 
+  // Espelho dos funis do Bitrix (nomes e ordem oficiais das etapas), usado na aba "Funil Bitrix".
+  try {
+    const cres = await fetch(`${webhookBase}crm.category.list.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entityTypeId: 2 }),
+    });
+    if (cres.ok) {
+      const cjson = await cres.json();
+      const cats = (cjson.result?.categories || []) as Array<Record<string, unknown>>;
+      if (cats.length) {
+        await supabaseAdmin.from("bitrix_pipelines").upsert(
+          cats.map((c) => ({
+            id: String(c.id),
+            name: String(c.name ?? `Funil ${c.id}`),
+            sort: Number(c.sort ?? 0),
+          })),
+          { onConflict: "id" },
+        );
+      }
+    }
+    const stres = await fetch(`${webhookBase}crm.status.list.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ start: -1 }),
+    });
+    if (stres.ok) {
+      const stjson = await stres.json();
+      const rows = ((stjson.result || []) as Array<Record<string, unknown>>)
+        .filter((r) => String(r.ENTITY_ID ?? "").startsWith("DEAL_STAGE"))
+        .map((r) => {
+          const entity = String(r.ENTITY_ID);
+          const pipelineId = entity === "DEAL_STAGE" ? "0" : entity.split("_").pop()!;
+          return {
+            stage_id: String(r.STATUS_ID),
+            pipeline_id: pipelineId,
+            name: String(r.NAME ?? r.STATUS_ID),
+            sort: Number(r.SORT ?? 0),
+            semantics: (r.SEMANTICS as string | null) ?? null,
+          };
+        });
+      if (rows.length) {
+        await supabaseAdmin.from("bitrix_stages").upsert(rows, { onConflict: "stage_id" });
+      }
+    }
+  } catch {
+    /* segue sem atualizar o espelho dos funis */
+  }
+
+
   let totalSynced = 0;
   let pages = 0;
   let hasMore = true;
