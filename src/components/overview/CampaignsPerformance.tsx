@@ -165,7 +165,7 @@ export function CampaignsPerformance({
       ) : (
         <>
           <div className="mt-3 max-h-[460px] overflow-auto rounded-lg border border-white/5">
-            <table className="w-full min-w-[1000px] text-[12.5px]">
+            <table className="w-full min-w-[1400px] text-[12.5px]">
               <thead className="sticky top-0 z-10 bg-card">
                 <tr>
                   {COLS.map((c) => (
@@ -184,7 +184,11 @@ export function CampaignsPerformance({
               </thead>
               <tbody>
                 {slice.map((r) => (
-                  <tr key={`${r.canal}-${r.campanha}`} className="zebra-row border-t border-white/5">
+                  <tr
+                    key={`${r.canal}-${r.campanha}`}
+                    className={`zebra-row border-t border-white/5 ${onSelect ? "cursor-pointer hover:bg-white/[0.04]" : ""}`}
+                    onClick={() => onSelect?.(r)}
+                  >
                     <td className="max-w-[280px] truncate px-3 py-2" title={r.campanha}>{r.campanha}</td>
                     <td className="px-3 py-2 text-muted-foreground">{r.operadora}</td>
 <td className="px-3 py-2 text-muted-foreground">
@@ -196,11 +200,15 @@ export function CampaignsPerformance({
                     <td className="px-3 py-2 text-right tabular-nums">{r.spend == null ? "—" : currency(r.spend)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{nfmt(r.leads)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground/60">—</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.leads_bitrix)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.qualificados)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.contatados)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.negociacao)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{num(r.crm?.vendas)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.leads_bitrix, r.leads)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{ratio(r.crm?.qualificados, r.crm?.leads_bitrix)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita ? currency(r.crm.receita) : "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.crm?.receita && r.spend ? (r.crm.receita / r.spend).toFixed(2) : "—"}</td>
                     <td className="px-3 py-2">
                       {r.status ? (
                         <Badge variant={r.status === "ACTIVE" || r.status === "ENABLED" ? "default" : "secondary"} className="text-[10px]">
@@ -232,7 +240,8 @@ export function CampaignsPerformance({
         </>
       )}
       <p className="mt-2 text-[11px] text-muted-foreground/70">
-        No Google Ads, a coluna de leads mostra conversões atribuídas pela plataforma. Contratos, vidas, receita e ROAS aguardam integração comercial.
+        Clique em uma campanha para ver o funil e os leads nominalmente. As colunas comerciais vêm do cruzamento pelo ID da campanha registrado no lead;
+        leads sem esse ID aparecem na linha “Campanha não identificada”.
       </p>
     </div>
   );
