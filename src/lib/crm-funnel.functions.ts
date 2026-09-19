@@ -46,6 +46,8 @@ export type CampaignCrmLead = {
   funnel_step: string;
   stage_label: string | null;
   valor: number | null;
+  telefone?: string | null;
+  cidade?: string | null;
 };
 
 /** Cruzamento agregado: campanhas do Meta × leads do Bitrix (por Campaign ID). */
