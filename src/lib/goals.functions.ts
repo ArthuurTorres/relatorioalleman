@@ -16,7 +16,7 @@ const UpsertSchema = Period.extend({
 });
 
 export const getLeadGoals = createServerFn({ method: "POST" })
-  .inputValidator((d) => Period.parse(d))
+  .validator((d) => Period.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { listGoals } = await import("@/lib/goals.server");
@@ -24,7 +24,7 @@ export const getLeadGoals = createServerFn({ method: "POST" })
   });
 
 export const getLeadGoalsProgress = createServerFn({ method: "POST" })
-  .inputValidator((d) => Period.parse(d))
+  .validator((d) => Period.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { computeProgress } = await import("@/lib/goals.server");
@@ -32,7 +32,7 @@ export const getLeadGoalsProgress = createServerFn({ method: "POST" })
   });
 
 export const saveLeadGoals = createServerFn({ method: "POST" })
-  .inputValidator((d) => UpsertSchema.parse(d))
+  .validator((d) => UpsertSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { upsertGoals } = await import("@/lib/goals.server");
@@ -40,7 +40,7 @@ export const saveLeadGoals = createServerFn({ method: "POST" })
   });
 
 export const removeLeadGoal = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { deleteGoal } = await import("@/lib/goals.server");
@@ -48,7 +48,7 @@ export const removeLeadGoal = createServerFn({ method: "POST" })
   });
 
 export const copyPreviousMonthGoals = createServerFn({ method: "POST" })
-  .inputValidator((d) => Period.parse(d))
+  .validator((d) => Period.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { duplicatePreviousMonth } = await import("@/lib/goals.server");

@@ -1,29 +1,21 @@
 import { redirect } from "@tanstack/react-router";
-import { useSession } from "@tanstack/react-start/server";
+import { getCookie, setCookie } from "@tanstack/start-server-core";
 import { createHash, timingSafeEqual } from "node:crypto";
 
 type GateSession = { unlocked?: boolean };
 
-function getSessionConfig() {
+function getSessionSecret() {
   const secret = process.env.SESSION_SECRET;
   if (!secret) throw new Error("SESSION_SECRET não configurado");
-
-  // useSession exige uma chave de no mínimo 32 caracteres; derivamos um hash
-  // estável para aceitar segredos de qualquer tamanho.
-  const password = createHash("sha256").update(secret, "utf8").digest("hex");
-
-  return {
-    password,
-    name: "utm-dashboard-gate",
-    maxAge: 60 * 60 * 24 * 30,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none" as const,
-      path: "/",
-    },
-  };
+  return secret;
 }
+
+function sessionHash(secret: string) {
+  return createHash("sha256").update(secret, "utf8").digest("hex");
+}
+
+const SESSION_COOKIE = "utm-dashboard-gate";
+const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export function passwordMatches(input: string, expected: string): boolean {
   const a = createHash("sha256").update(input, "utf8").digest();
@@ -31,22 +23,48 @@ export function passwordMatches(input: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
+/** Lê o estado de desbloqueio do cookie de sessão. */
+function readUnlocked(): boolean {
+  try {
+    const raw = getCookie(SESSION_COOKIE);
+    if (!raw) return false;
+    const parsed = JSON.parse(decodeURIComponent(raw)) as GateSession;
+    return Boolean(parsed.unlocked);
+  } catch {
+    return false;
+  }
+}
+
+/** Grava o estado desbloqueado no cookie. */
+function writeUnlocked(value: boolean) {
+  const payload = encodeURIComponent(JSON.stringify({ unlocked: value }));
+  setCookie(SESSION_COOKIE, payload, {
+    maxAge: MAX_AGE,
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
+}
+
 export async function requireUnlocked() {
-  const session = await useSession<GateSession>(getSessionConfig());
-  if (!session.data.unlocked) throw redirect({ to: "/unlock" });
+  if (!readUnlocked()) throw redirect({ to: "/unlock" });
 }
 
 export async function markUnlocked() {
-  const session = await useSession<GateSession>(getSessionConfig());
-  await session.update({ unlocked: true });
+  writeUnlocked(true);
 }
 
 export async function clearGateSession() {
-  const session = await useSession<GateSession>(getSessionConfig());
-  await session.clear();
+  setCookie(SESSION_COOKIE, "", {
+    maxAge: 0,
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
 }
 
 export async function getUnlockedState() {
-  const session = await useSession<GateSession>(getSessionConfig());
-  return { unlocked: Boolean(session.data.unlocked) };
+  return { unlocked: readUnlocked() };
 }

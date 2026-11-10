@@ -41,8 +41,6 @@ import { GoalsTab } from "@/components/overview/GoalsTab";
 import { IntegrationsTab } from "@/components/overview/IntegrationsTab";
 import { BitrixFunnelTab } from "@/components/overview/BitrixFunnelTab";
 
-import triveLogo from "@/assets/trive-logo.png.asset.json";
-import allemanLogo from "@/assets/alleman-logo.jpg.asset.json";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
 
 export const Route = createFileRoute("/dashboard")({
@@ -302,9 +300,9 @@ function Dashboard() {
               <div className="flex min-w-0 items-center gap-4">
                 {/* Logos side by side */}
                 <div className="flex items-center gap-3.5">
-                  <img src={triveLogo.url} alt="Trive" className="h-11 md:h-14 w-auto shrink-0" />
+                  <img src="/trive-logo.png" alt="Trive" className="h-11 md:h-14 w-auto shrink-0" />
                   <span className="h-9 w-px bg-white/15" aria-hidden />
-                  <img src={allemanLogo.url} alt="Alleman Corretora" className="h-11 md:h-14 w-auto shrink-0 rounded-md bg-white p-0.5" />
+                  <img src="/alleman-logo.jpg" alt="Alleman Corretora" className="h-11 md:h-14 w-auto shrink-0 rounded-md bg-white p-0.5" />
                 </div>
                 <div className="hidden md:block h-8 w-px bg-white/10" aria-hidden />
                 <div className="hidden md:flex min-w-0 flex-col justify-center">

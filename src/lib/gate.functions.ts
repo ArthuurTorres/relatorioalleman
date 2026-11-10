@@ -7,7 +7,7 @@ import {
 } from "@/lib/gate.server";
 
 export const unlockSite = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
+  .validator((data: { password: string }) => data)
   .handler(async ({ data }) => {
     const expected = process.env.SITE_PASSWORD?.trim();
     if (!expected) throw new Error("SITE_PASSWORD não configurado");

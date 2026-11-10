@@ -60,7 +60,7 @@ export type CampaignCrmLead = {
 
 /** Cruzamento agregado: campanhas do Meta × leads do Bitrix (por Campaign ID). */
 export const getCampaignCrmFunnel = createServerFn({ method: "POST" })
-  .inputValidator((d) => RangeSchema.parse(d))
+  .validator((d) => RangeSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -74,7 +74,7 @@ export const getCampaignCrmFunnel = createServerFn({ method: "POST" })
 
 /** Lista nominal dos leads de uma campanha (use "__none__" para não identificados). */
 export const getCampaignCrmLeads = createServerFn({ method: "POST" })
-  .inputValidator((d) => LeadsSchema.parse(d))
+  .validator((d) => LeadsSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();

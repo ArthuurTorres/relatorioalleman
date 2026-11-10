@@ -9,17 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnlockRouteImport } from './routes/unlock'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicSyncMetaLeadsRouteImport } from './routes/api/public/sync-meta-leads'
-import { Route as ApiPublicSyncMetaRouteImport } from './routes/api/public/sync-meta'
-import { Route as ApiPublicSyncGoogleAdsRouteImport } from './routes/api/public/sync-google-ads'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as ApiPublicSyncBitrixDealsRouteImport } from './routes/api/public/sync-bitrix-deals'
+import { Route as ApiPublicSyncBitrixStageHistoryRouteImport } from './routes/api/public/sync-bitrix-stage-history'
+import { Route as ApiPublicSyncGoogleAdsRouteImport } from './routes/api/public/sync-google-ads'
+import { Route as ApiPublicSyncMetaRouteImport } from './routes/api/public/sync-meta'
+import { Route as ApiPublicSyncMetaLeadsRouteImport } from './routes/api/public/sync-meta-leads'
 
-const UnlockRoute = UnlockRouteImport.update({
-  id: '/unlock',
-  path: '/unlock',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -27,24 +28,9 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSyncMetaLeadsRoute = ApiPublicSyncMetaLeadsRouteImport.update({
-  id: '/api/public/sync-meta-leads',
-  path: '/api/public/sync-meta-leads',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSyncMetaRoute = ApiPublicSyncMetaRouteImport.update({
-  id: '/api/public/sync-meta',
-  path: '/api/public/sync-meta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSyncGoogleAdsRoute = ApiPublicSyncGoogleAdsRouteImport.update({
-  id: '/api/public/sync-google-ads',
-  path: '/api/public/sync-google-ads',
+const UnlockRoute = UnlockRouteImport.update({
+  id: '/unlock',
+  path: '/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSyncBitrixDealsRoute =
@@ -53,12 +39,34 @@ const ApiPublicSyncBitrixDealsRoute =
     path: '/api/public/sync-bitrix-deals',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSyncBitrixStageHistoryRoute =
+  ApiPublicSyncBitrixStageHistoryRouteImport.update({
+    id: '/api/public/sync-bitrix-stage-history',
+    path: '/api/public/sync-bitrix-stage-history',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicSyncGoogleAdsRoute = ApiPublicSyncGoogleAdsRouteImport.update({
+  id: '/api/public/sync-google-ads',
+  path: '/api/public/sync-google-ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSyncMetaRoute = ApiPublicSyncMetaRouteImport.update({
+  id: '/api/public/sync-meta',
+  path: '/api/public/sync-meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSyncMetaLeadsRoute = ApiPublicSyncMetaLeadsRouteImport.update({
+  id: '/api/public/sync-meta-leads',
+  path: '/api/public/sync-meta-leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/unlock': typeof UnlockRoute
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
+  '/api/public/sync-bitrix-stage-history': typeof ApiPublicSyncBitrixStageHistoryRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
   '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
@@ -68,6 +76,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/unlock': typeof UnlockRoute
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
+  '/api/public/sync-bitrix-stage-history': typeof ApiPublicSyncBitrixStageHistoryRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
   '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
@@ -78,6 +87,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/unlock': typeof UnlockRoute
   '/api/public/sync-bitrix-deals': typeof ApiPublicSyncBitrixDealsRoute
+  '/api/public/sync-bitrix-stage-history': typeof ApiPublicSyncBitrixStageHistoryRoute
   '/api/public/sync-google-ads': typeof ApiPublicSyncGoogleAdsRoute
   '/api/public/sync-meta': typeof ApiPublicSyncMetaRoute
   '/api/public/sync-meta-leads': typeof ApiPublicSyncMetaLeadsRoute
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/unlock'
     | '/api/public/sync-bitrix-deals'
+    | '/api/public/sync-bitrix-stage-history'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
     | '/api/public/sync-meta-leads'
@@ -98,6 +109,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/unlock'
     | '/api/public/sync-bitrix-deals'
+    | '/api/public/sync-bitrix-stage-history'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
     | '/api/public/sync-meta-leads'
@@ -107,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/unlock'
     | '/api/public/sync-bitrix-deals'
+    | '/api/public/sync-bitrix-stage-history'
     | '/api/public/sync-google-ads'
     | '/api/public/sync-meta'
     | '/api/public/sync-meta-leads'
@@ -117,6 +130,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   UnlockRoute: typeof UnlockRoute
   ApiPublicSyncBitrixDealsRoute: typeof ApiPublicSyncBitrixDealsRoute
+  ApiPublicSyncBitrixStageHistoryRoute: typeof ApiPublicSyncBitrixStageHistoryRoute
   ApiPublicSyncGoogleAdsRoute: typeof ApiPublicSyncGoogleAdsRoute
   ApiPublicSyncMetaRoute: typeof ApiPublicSyncMetaRoute
   ApiPublicSyncMetaLeadsRoute: typeof ApiPublicSyncMetaLeadsRoute
@@ -124,11 +138,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/unlock': {
-      id: '/unlock'
-      path: '/unlock'
-      fullPath: '/unlock'
-      preLoaderRoute: typeof UnlockRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -138,25 +152,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/unlock': {
+      id: '/unlock'
+      path: '/unlock'
+      fullPath: '/unlock'
+      preLoaderRoute: typeof UnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/sync-meta-leads': {
-      id: '/api/public/sync-meta-leads'
-      path: '/api/public/sync-meta-leads'
-      fullPath: '/api/public/sync-meta-leads'
-      preLoaderRoute: typeof ApiPublicSyncMetaLeadsRouteImport
+    '/api/public/sync-bitrix-deals': {
+      id: '/api/public/sync-bitrix-deals'
+      path: '/api/public/sync-bitrix-deals'
+      fullPath: '/api/public/sync-bitrix-deals'
+      preLoaderRoute: typeof ApiPublicSyncBitrixDealsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/sync-meta': {
-      id: '/api/public/sync-meta'
-      path: '/api/public/sync-meta'
-      fullPath: '/api/public/sync-meta'
-      preLoaderRoute: typeof ApiPublicSyncMetaRouteImport
+    '/api/public/sync-bitrix-stage-history': {
+      id: '/api/public/sync-bitrix-stage-history'
+      path: '/api/public/sync-bitrix-stage-history'
+      fullPath: '/api/public/sync-bitrix-stage-history'
+      preLoaderRoute: typeof ApiPublicSyncBitrixStageHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/sync-google-ads': {
@@ -166,11 +180,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncGoogleAdsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/sync-bitrix-deals': {
-      id: '/api/public/sync-bitrix-deals'
-      path: '/api/public/sync-bitrix-deals'
-      fullPath: '/api/public/sync-bitrix-deals'
-      preLoaderRoute: typeof ApiPublicSyncBitrixDealsRouteImport
+    '/api/public/sync-meta': {
+      id: '/api/public/sync-meta'
+      path: '/api/public/sync-meta'
+      fullPath: '/api/public/sync-meta'
+      preLoaderRoute: typeof ApiPublicSyncMetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/sync-meta-leads': {
+      id: '/api/public/sync-meta-leads'
+      path: '/api/public/sync-meta-leads'
+      fullPath: '/api/public/sync-meta-leads'
+      preLoaderRoute: typeof ApiPublicSyncMetaLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -181,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   UnlockRoute: UnlockRoute,
   ApiPublicSyncBitrixDealsRoute: ApiPublicSyncBitrixDealsRoute,
+  ApiPublicSyncBitrixStageHistoryRoute: ApiPublicSyncBitrixStageHistoryRoute,
   ApiPublicSyncGoogleAdsRoute: ApiPublicSyncGoogleAdsRoute,
   ApiPublicSyncMetaRoute: ApiPublicSyncMetaRoute,
   ApiPublicSyncMetaLeadsRoute: ApiPublicSyncMetaLeadsRoute,

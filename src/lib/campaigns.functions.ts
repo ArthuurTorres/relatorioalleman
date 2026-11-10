@@ -6,14 +6,14 @@ import { getCampaignDetail, listCampaigns } from "@/lib/campaigns.server";
 export type { CampaignDetail, CampaignOption, Canal } from "@/lib/campaigns.server";
 
 export const getCampaignOptions = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
+  .validator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     return listCampaigns(data.from, data.to);
   });
 
 export const getCampaignDetailFn = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
+  .validator((d) =>
     z.object({ canal: z.enum(["meta", "google"]), id: z.string(), from: z.string(), to: z.string() }).parse(d),
   )
   .handler(async ({ data }) => {

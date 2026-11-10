@@ -9,10 +9,12 @@ type BitrixDeal = Record<string, unknown>;
  * Campaign ID é sempre tratado como texto. Vazio = campo ainda não existe no CRM.
  */
 const BITRIX_CAMPAIGN_FIELDS = {
-  campaign_id: "",
-  adset_id: "",
-  ad_id: "",
-  campaign_name: "",
+  campaign_id: "UF_CRM_1785865455270",
+  adset_id: "UF_CRM_1785865504137",
+  ad_id: "UF_CRM_1785865767228",
+  campaign_name: "UF_CRM_1789998928139",
+  adset_name: "UF_CRM_1785865485937",
+  ad_name: "UF_CRM_1785865737598",
 } as const;
 
 function readField(deal: BitrixDeal, field: string, extra: Record<string, string>, extraKeys: string[]): string | null {
@@ -267,9 +269,31 @@ async function handler(request: Request): Promise<Response> {
       const fbclidLabel = !isRealFbclid(rawFbclid) ? rawFbclid : null;
       const sourceName = sourceNames.get(String(deal.SOURCE_ID ?? "")) || null;
       const utmSource = (deal.UTM_SOURCE as string) || extra.utm_source || sourceName || null;
-      // Origem Meta = utm indica Meta, OU tem fbclid real, OU tem rótulo Meta-like
-      const origem = derivarOrigem(utmSource, fbclidReal || (fbclidLabel && /meta|fb\b|facebook|instagram/i.test(fbclidLabel) ? "1" : null));
       const dominio = (deal.UF_CRM_1773253579129 as string) || extrairDominio(urlPagina);
+
+      // No Bitrix o campo "ID da campanha" às vezes recebe o NOME da campanha.
+      // Só aceita como ID o que for numérico; o resto vira nome (resolvido depois por meta_campaigns).
+      const campaignRef = readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_id, extra, ["campaign_id", "campaignid"]);
+      const campaignIsId = !!campaignRef && /^\d{6,}$/.test(campaignRef);
+      const campaignId = campaignIsId ? campaignRef : null;
+      // Quando o campo traz texto em vez do número, ele é o nome da campanha.
+      const campaignNameMeta =
+        readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_name, extra, ["campaign_name", "campaignname"]) ||
+        (campaignRef && !campaignIsId ? campaignRef : null);
+      const adsetRef = readField(deal, BITRIX_CAMPAIGN_FIELDS.adset_id, extra, ["adset_id", "adsetid"]);
+      const adsetId = adsetRef && /^\d{6,}$/.test(adsetRef) ? adsetRef : null;
+      const adRef = readField(deal, BITRIX_CAMPAIGN_FIELDS.ad_id, extra, ["ad_id", "adid"]);
+      const adId = adRef && /^\d{6,}$/.test(adRef) ? adRef : null;
+      const campaignNameResolved =
+        campaignNameMeta || extra.campaign_name || extra.campaignname || fbclidLabel || null;
+      // Origem Meta = utm indica Meta, OU fbclid real, OU rótulo Meta-like, OU o CRM
+      // trouxe campanha/anúncio (só a mídia paga preenche esses campos).
+      const origem = derivarOrigem(
+        utmSource,
+        fbclidReal ||
+          (fbclidLabel && /meta|fb\b|facebook|instagram/i.test(fbclidLabel) ? "1" : null) ||
+          (campaignId || campaignNameResolved || adId ? "1" : null),
+      );
 
       return {
         bitrix_deal_id: String(deal.ID),
@@ -286,17 +310,17 @@ async function handler(request: Request): Promise<Response> {
         url_pagina: urlPagina || null,
         id_formulario: (deal.UF_CRM_1773253674766 as string) || extra.form_id || null,
         nome_formulario: (deal.UF_CRM_1773253691932 as string) || extra.form_name || null,
-        adset_id: extra.adset_id || extra.adsetid || null,
-        ad_id: extra.ad_id || extra.adid || null,
-        ad_name: extra.ad_name || extra.adname || null,
-        adset_name: extra.adset_name || extra.adsetname || null,
-        campaign_name: extra.campaign_name || extra.campaignname || fbclidLabel || null,
+        adset_id: adsetId,
+        ad_id: adId,
+        ad_name: readField(deal, BITRIX_CAMPAIGN_FIELDS.ad_name, extra, ["ad_name", "adname"]),
+        adset_name: readField(deal, BITRIX_CAMPAIGN_FIELDS.adset_name, extra, ["adset_name", "adsetname"]),
+        campaign_name: campaignNameResolved,
         placement: extra.placement || null,
         site_source_name: extra.site_source_name || null,
-        campaign_id: readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_id, extra, ["campaign_id", "campaignid"]),
-        adset_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.adset_id, extra, ["adset_id", "adsetid"]),
-        ad_id_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.ad_id, extra, ["ad_id", "adid"]),
-        campaign_name_meta: readField(deal, BITRIX_CAMPAIGN_FIELDS.campaign_name, extra, ["campaign_name", "campaignname"]),
+        campaign_id: campaignId,
+        adset_id_meta: adsetId,
+        ad_id_meta: adId,
+        campaign_name_meta: campaignNameMeta,
         contato_nome: contato?.nome ?? null,
         contato_telefone: contato?.telefone ?? null,
         contato_telefone_norm: normPhone(contato?.telefone),

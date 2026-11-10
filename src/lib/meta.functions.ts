@@ -80,7 +80,7 @@ export type MetaPerformance = {
 };
 
 export const getMetaPerformance = createServerFn({ method: "POST" })
-  .inputValidator((d) => Schema.parse(d))
+  .validator((d) => Schema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();

@@ -41,7 +41,7 @@ export const getUtmDataBounds = createServerFn({ method: "GET" }).handler(async 
 });
 
 export const getUtmSummary = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -67,7 +67,7 @@ export const getUtmSummary = createServerFn({ method: "POST" })
   });
 
 export const getUtmDashboard = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -89,7 +89,7 @@ export const getUtmDashboard = createServerFn({ method: "POST" })
   });
 
 export const getMetaDetail = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -114,7 +114,7 @@ export const getMetaDetail = createServerFn({ method: "POST" })
   });
 
 export const getGoogleDetail = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -137,7 +137,7 @@ export const getGoogleDetail = createServerFn({ method: "POST" })
   });
 
 export const getDomainComparison = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -174,7 +174,7 @@ export const getDomainComparison = createServerFn({ method: "POST" })
   });
 
 export const getUtmTimeseries = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -193,7 +193,7 @@ export const getUtmTimeseries = createServerFn({ method: "POST" })
   });
 
 export const getTopAds = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -217,7 +217,7 @@ export const getTopAds = createServerFn({ method: "POST" })
   });
 
 export const getTopPages = createServerFn({ method: "POST" })
-  .inputValidator((d) => FiltersSchema.parse(d))
+  .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();
@@ -242,7 +242,7 @@ export const getTopPages = createServerFn({ method: "POST" })
   });
 
 export const getConversionsTable = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
+  .validator((d) =>
     FiltersSchema.extend({
       search: z.string().optional(),
     }).parse(d),
@@ -304,7 +304,7 @@ export type TermSearchResult = {
 };
 
 export const searchLeadsByTerm = createServerFn({ method: "POST" })
-  .inputValidator((d) => TermSchema.parse(d))
+  .validator((d) => TermSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const supabase = await getClient();

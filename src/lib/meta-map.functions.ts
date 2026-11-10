@@ -78,7 +78,7 @@ const UpsertSchema = z.object({
 });
 
 export const upsertFormMapping = createServerFn({ method: "POST" })
-  .inputValidator((d) => UpsertSchema.parse(d))
+  .validator((d) => UpsertSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -100,7 +100,7 @@ export const upsertFormMapping = createServerFn({ method: "POST" })
 const DeleteSchema = z.object({ form_label: z.string().min(1) });
 
 export const deleteFormMapping = createServerFn({ method: "POST" })
-  .inputValidator((d) => DeleteSchema.parse(d))
+  .validator((d) => DeleteSchema.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

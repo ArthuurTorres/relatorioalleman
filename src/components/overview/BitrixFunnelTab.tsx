@@ -4,8 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   getBitrixPipelineFunnel,
   getBitrixStageLeads,
+  getFunnelCohort,
   type BitrixPipelineRow,
   type BitrixStageRow,
+  type FunnelCohort,
 } from "@/lib/bitrix-funnel.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,12 @@ export function BitrixFunnelTab({ filters }: Props) {
   const funnel = useQuery({
     queryKey: ["bitrix-pipeline-funnel", filters.from, filters.to, origem],
     queryFn: () => fetchFunnel({ data: { from: filters.from, to: filters.to, origem } }),
+  });
+
+  const fetchCohort = useServerFn(getFunnelCohort);
+  const cohort = useQuery({
+    queryKey: ["bitrix-funnel-cohort", filters.from, filters.to, origem],
+    queryFn: () => fetchCohort({ data: { from: filters.from, to: filters.to, origem } }),
   });
 
   const pipelines = useMemo(
@@ -172,6 +180,12 @@ export function BitrixFunnelTab({ filters }: Props) {
         </CardContent>
       </Card>
 
+      <CohortCard
+        cohort={cohort.data}
+        isLoading={cohort.isLoading}
+        origem={ORIGEM_TABS[origemIdx]!.label}
+      />
+
       <StageMapping filters={filters} origem={origem} />
 
       <StageLeadsSheet
@@ -182,6 +196,101 @@ export function BitrixFunnelTab({ filters }: Props) {
         onClose={() => setStage(null)}
       />
     </div>
+  );
+}
+
+function CohortCard({
+  cohort,
+  isLoading,
+  origem,
+}: {
+  cohort: FunnelCohort | undefined;
+  isLoading: boolean;
+  origem: string;
+}) {
+  const etapas = useMemo(
+    () =>
+      (cohort?.etapas ?? [])
+        .filter((e) => e.etapa !== "perdido")
+        .slice()
+        .sort((a, b) => a.rank - b.rank),
+    [cohort],
+  );
+  const total = (cohort?.coorte ?? []).reduce((s, c) => s + c.leads, 0);
+  const semHistorico = cohort?.sem_historico ?? 0;
+  const noPeriodo = total + semHistorico;
+  const primeiro = etapas[0];
+  const base = primeiro?.total ?? 0;
+
+  return (
+    <Card className="border-white/[0.06] bg-card/40">
+      <CardHeader>
+        <CardTitle className="text-base">Aproveitamento por coorte · {origem}</CardTitle>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Dos {nfmt(noPeriodo)} leads criados no período, quantos chegaram a cada etapa — contagem
+          cumulativa (chegou aqui ou além) pelo histórico de etapas do CRM. Quem o time moveu de
+          Qualificado direto para Tentativa continua contando nas duas: por isso a coluna "da etapa
+          anterior" nunca passa de 100%.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : !etapas.length ? (
+          <p className="text-sm text-muted-foreground">
+            Sem histórico de etapas para os leads deste período. Rode a sincronização do histórico
+            do CRM para habilitar esta leitura.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Etapa</TableHead>
+                  <TableHead className="text-right">Chegaram ou passaram</TableHead>
+                  <TableHead className="text-right">Da coorte medida</TableHead>
+                  <TableHead className="text-right">Avanço da etapa anterior</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {etapas.map((e) => {
+                  const anterior = etapas[etapas.indexOf(e) - 1];
+                  const daCoorte = base ? (e.total / base) * 100 : 0;
+                  const conv = anterior && anterior.total > 0 ? (e.total / anterior.total) * 100 : null;
+                  const tone = STEP_TONE[e.etapa];
+                  return (
+                    <TableRow key={`${e.rank}-${e.etapa}`}>
+                      <TableCell>
+                        <span className="flex items-center gap-2 text-sm">
+                          {e.etapa}
+                          {tone && (
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ring-1 ${tone}`}>
+                              {e.rank}
+                            </span>
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">{nfmt(e.total)}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {pctfmt(daCoorte, 1)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {conv != null ? `${pctfmt(conv, 1)} de ${nfmt(anterior!.total)}` : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Base da coorte: {nfmt(total)} leads com histórico no CRM, de {nfmt(noPeriodo)} no
+              período
+              {semHistorico > 0 && ` · ${nfmt(semHistorico)} ainda sem histórico sincronizado`}.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
