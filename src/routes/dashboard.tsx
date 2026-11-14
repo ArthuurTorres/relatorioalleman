@@ -70,7 +70,7 @@ const COLORS = {
 };
 
 /** Fuso de referência do negócio: America/Sao_Paulo (UTC-3, sem horário de verão). */
-const TZ_OFFSET = "-03:00";
+const TZ_OFFSET = "Z";
 
 /** yyyy-mm-dd do instante informado no fuso de São Paulo */
 function spDay(value: string | Date) {
@@ -139,8 +139,8 @@ type RangePreset = {
 };
 
 const RANGE_PRESETS: RangePreset[] = [
-  { key: "3d", label: "3d", compute: () => ({ from: todayMinus(2), to: endOfToday() }) },
-  { key: "ontem", label: "Ontem", compute: () => ({ from: todayMinus(1), to: endOfDayIso(todayMinus(1)) }) },
+  { key: "3d", label: "3d", compute: () => ({ from: todayMinus(3), to: endOfToday() }) },
+  { key: "ontem", label: "Ontem", compute: () => ({ from: todayMinus(3), to: endOfDayIso(todayMinus(1)) }) },
   { key: "7d", label: "7d", compute: () => ({ from: todayMinus(6), to: endOfToday() }) },
   { key: "14d", label: "14d", compute: () => ({ from: todayMinus(13), to: endOfToday() }) },
   { key: "30d", label: "30d", compute: () => ({ from: todayMinus(29), to: endOfToday() }) },
@@ -167,7 +167,7 @@ const RANGE_PRESETS: RangePreset[] = [
 ];
 
 function useFilters() {
-  const initial = RANGE_PRESETS.find((r) => r.key === "3d")!.compute();
+  const initial = RANGE_PRESETS.find((r) => r.key === "30d")!.compute();
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
   const [origem, setOrigem] = useState<string[]>([]);
