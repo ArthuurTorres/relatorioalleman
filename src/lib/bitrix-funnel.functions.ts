@@ -255,3 +255,55 @@ export const getBitrixStageLeads = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return (result ?? []) as BitrixStageLead[];
   });
+
+/** ----- Criativos + Funil ----- */
+
+/** Schema de resposta para getCreativesFunnel */
+export const CreativesFunnelSchema = z.object({
+  stages: z
+    .array(z.object({ rank: z.number(), step: z.string() }))
+    .optional(),
+  ads: z
+    .array(
+      z.object({
+        ad_id: z.string(),
+        ad_name: z.string(),
+        adset_id: z.string().nullable(),
+        campaign_id: z.string().nullable(),
+        campaign_name: z.string().nullable(),
+        spend: z.number(),
+        impressions: z.number(),
+        clicks: z.number(),
+        reach: z.number(),
+        leads: z.number(),
+        leads_meta: z.number(),
+        leads_outros: z.number(),
+        valor_gerado: z.number(),
+        valor_meta: z.number(),
+        valor_outros: z.number(),
+        ticket_medio: z.number().nullable(),
+        roas: z.number().nullable(),
+        cpl: z.number().nullable(),
+        ctr: z.number().nullable(),
+        cpm: z.number().nullable(),
+        funnel_rates: z.record(z.string(), z.number()).optional(),
+      })
+    )
+    .optional(),
+});
+
+export type CreativesFunnelData = z.infer<typeof CreativesFunnelSchema>;
+
+/** Desempenho de criativos com aproveitamento por etapa do funil. */
+export const getCreativesFunnel = createServerFn({ method: "POST" })
+  .validator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const supabase = await getClient();
+    const { data: result, error } = await (supabase as any).rpc("get_creatives_funnel", {
+      p_from: data.from,
+      p_to: data.to,
+    });
+    if (error) throw new Error(error.message);
+    return CreativesFunnelSchema.parse(result) as CreativesFunnelData;
+  });

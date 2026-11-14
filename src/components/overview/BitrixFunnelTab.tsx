@@ -9,6 +9,7 @@ import {
   type BitrixStageRow,
   type FunnelCohort,
 } from "@/lib/bitrix-funnel.functions";
+import { CreativesFunnelCard } from "./CreativesFunnelCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -186,7 +187,7 @@ export function BitrixFunnelTab({ filters }: Props) {
         origem={ORIGEM_TABS[origemIdx]!.label}
       />
 
-      <StageMapping filters={filters} origem={origem} />
+      <CreativesFunnelCard filters={filters} />
 
       <StageLeadsSheet
         stage={stage}
