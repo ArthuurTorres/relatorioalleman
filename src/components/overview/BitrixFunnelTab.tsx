@@ -24,7 +24,6 @@ type Props = { filters: { from: string; to: string } };
 
 const ORIGEM_TABS: { label: string; value: string[] | null }[] = [
   { label: "Meta", value: ["Meta"] },
-  { label: "Google", value: ["Google"] },
   { label: "Outros", value: ["Outros"] },
   { label: "Todos", value: null },
 ];

@@ -13,6 +13,7 @@ import { LeadGoals } from "./LeadGoals";
 import { ChannelComparison, type ChannelRow } from "./ChannelComparison";
 import { IntegrationsHealth, type IntegrationRow } from "./IntegrationsHealth";
 import { CampaignsPerformance, type CampaignRow } from "./CampaignsPerformance";
+import { CreativesCard } from "./CreativesCard";
 import { CampaignLeadsDrawer } from "./CampaignLeadsDrawer";
 import { CHART, currency, nfmt, operadoraFromCampaign, variation } from "@/lib/dashboard-utils";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
