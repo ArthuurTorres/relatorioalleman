@@ -84,8 +84,8 @@ export function MetaUnified({ filters }: { filters: Filters }) {
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
           Cruzamento entre gasto do Meta e conversões do Bitrix, com detalhamento de UTMs, placements e páginas
-          {sync.data?.last_run && (
-            <> · última sync: <span className="tabular-nums text-foreground/70">{new Date(sync.data.last_run).toLocaleString("pt-BR")}</span></>
+          {sync.data?.lastSync && (
+            <> · última sync: <span className="tabular-nums text-foreground/70">{new Date(sync.data.lastSync).toLocaleString("pt-BR")}</span></>
           )}
         </p>
       </CardHeader>

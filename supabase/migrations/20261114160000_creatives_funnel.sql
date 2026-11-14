@@ -55,6 +55,12 @@ BEGIN
       JOIN bitrix_stage_history bsh ON bsh.deal_id = lm.bitrix_deal_id
       LEFT JOIN bitrix_stage_map sm ON sm.stage_id = bsh.stage_id
       WHERE lm.matched_at >= p_from AND lm.matched_at <= p_to
+        -- filtra só leads de origem Meta (ignora leads sem origem ou de outros canais)
+        AND EXISTS (
+          SELECT 1 FROM utm_conversions uc
+          WHERE uc.bitrix_deal_id = lm.bitrix_deal_id
+            AND uc.origem = 'Meta'
+        )
       ORDER BY lm.bitrix_deal_id, bsh.changed_at DESC
     ),
 

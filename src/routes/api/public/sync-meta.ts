@@ -37,6 +37,103 @@ async function graphAll(initialUrl: string, token: string, params: Record<string
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Sincroniza os assets de cada criativo: image_url, thumbnail_url, title, body
+// ---------------------------------------------------------------------------
+async function syncCreatives(
+  act: string,
+  token: string,
+  supabaseAdmin: import("@supabase/supabase-js").SupabaseClient,
+): Promise<number> {
+  const errors: string[] = [];
+
+  // 5a) Puxa todos os creative_ids únicos dos ads já syncados
+  const { data: adsRows } = await supabaseAdmin
+    .from("meta_ads")
+    .select("creative_id, account_id")
+    .not("creative_id", "is", null);
+
+  if (!adsRows?.length) return 0;
+
+  const seen = new Set<string>();
+  const creatives: AnyRec[] = [];
+
+  for (const ad of adsRows) {
+    const cid = String(ad.creative_id!);
+    if (seen.has(cid)) continue;
+    seen.add(cid);
+    // Puxa detalhes do criativo
+    try {
+      const details: any = await graphGet(`/${cid}`, token, {
+        fields:
+          "id,account_id,title,body,image_url,thumbnail_url,link_url,object_story_spec,status",
+      });
+      creatives.push(details);
+    } catch (e) {
+      errors.push(`creative ${cid}: ${(e as any)?.message}`);
+    }
+    // Pausa para não estourar rate limit
+    await new Promise((r) => setTimeout(r, 100));
+  }
+
+  if (!creatives.length) return 0;
+
+  // 5b) Puxa imagens do adaccount para mapear hash → url
+  let imageMap: Record<string, string> = {};
+  try {
+    const imgs: AnyRec[] = await graphAll(`/${act}/adimages`, token, {
+      fields: "hash,url,width,height",
+      limit: "500",
+    });
+    for (const img of imgs) {
+      imageMap[String(img.hash)] = String(img.url ?? "");
+    }
+  } catch (e) {
+    // Falhar no imagens não bloqueia o sync de criativos
+  }
+
+  const rows = creatives
+    .filter((c: any) => c.id)
+    .map((c: any) => {
+      // thumbnail_url direto da API (v20+), ou tenta mapa por hash
+      let thumbUrl = c.thumbnail_url ?? "";
+      if (!thumbUrl && c.image_url) {
+        // image_url pode ser um hash
+        const parts = String(c.image_url).split("/");
+        const hash = parts[parts.length - 1];
+        if (hash && imageMap[hash]) thumbUrl = imageMap[hash];
+      }
+      return {
+        creative_id: String(c.id),
+        account_id: act,
+        title: c.title ?? null,
+        body: c.body ?? null,
+        image_url: imageMap[c.image_url] ?? (c.image_url ?? null),
+        thumbnail_url: thumbUrl || null,
+        link_url: c.link_url ?? null,
+        status: c.status ?? null,
+        synced_at: new Date().toISOString(),
+      };
+    });
+
+  let saved = 0;
+  for (let i = 0; i < rows.length; i += 200) {
+    const { error } = await supabaseAdmin
+      .from("meta_creatives")
+      .upsert(rows.slice(i, i + 200), { onConflict: "creative_id" });
+    if (error) {
+      errors.push(`creatives upsert: ${error.message}`);
+    } else {
+      saved += rows.slice(i, i + 200).length;
+    }
+  }
+
+  if (errors.length) {
+    console.warn("[syncCreatives] errors:", errors.slice(0, 5));
+  }
+  return saved;
+}
+
 async function handler(request: Request): Promise<Response> {
   const started = Date.now();
   const url = new URL(request.url);
@@ -236,6 +333,14 @@ async function handler(request: Request): Promise<Response> {
       }
     }
     stats.insights = totalInsights;
+
+    // 5) CREATIVES — puxa image_url, thumbnail_url, title, body, link_url
+    const syncedCreatives = await syncCreatives(act, token, supabaseAdmin);
+    stats.creatives = syncedCreatives;
+
+    // 6) SYNC meta_leads (via lead gen, preenchido pelo bot no webhook — executa se existir endpoint)
+    // O sync de leads é preenchido pelo bot via webhook — não há API Graph para puxar leads.
+
   } catch (e: any) {
     errors.push(String(e?.message || e));
   }
