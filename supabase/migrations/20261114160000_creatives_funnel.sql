@@ -4,12 +4,11 @@ CREATE OR REPLACE FUNCTION get_creatives_funnel(p_from timestamptz, p_to timesta
 RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
-AS $$
+AS $fn$
 DECLARE
   result json;
 BEGIN
   WITH
-    -- Meta Ads do período (insights via admin client → bypass PostgREST schema cache)
     meta_ads AS (
       SELECT
         ai.ad_id,
@@ -21,12 +20,10 @@ BEGIN
         COALESCE(SUM(ai.clicks)::bigint, 0)       AS clicks,
         COALESCE(SUM(ai.reach)::bigint, 0)        AS reach
       FROM meta_ad_insights ai
-      WHERE ai.date >= p_from::date
-        AND ai.date <= p_to::date
+      WHERE ai.date_start >= p_from::date
+        AND ai.date_start <= p_to::date
       GROUP BY ai.ad_id, ai.adset_id, ai.campaign_id, ai.ad_name
     ),
-
-    -- Leads do período (por ad) via lead_match → utm_conversions
     ad_leads AS (
       SELECT
         lm.ad_id,
@@ -41,8 +38,6 @@ BEGIN
         AND lm.matched_at <= p_to
       GROUP BY lm.ad_id
     ),
-
-    -- Melhor etapa do funil Bitrix para cada deal (via histórico de etapas)
     best_stage AS (
       SELECT DISTINCT ON (lm.bitrix_deal_id)
         lm.ad_id,
@@ -50,12 +45,11 @@ BEGIN
         bsh.changed_at,
         COALESCE(sm.funnel_step, 'sem_mapeamento') AS funnel_step,
         COALESCE(sm.step_rank, 999)                  AS step_rank,
-        COALESCE(sm.name, bsh.stage_id)             AS stage_name
+        COALESCE(sm.label, bsh.stage_id)             AS stage_name
       FROM lead_match lm
       JOIN bitrix_stage_history bsh ON bsh.deal_id = lm.bitrix_deal_id
       LEFT JOIN bitrix_stage_map sm ON sm.stage_id = bsh.stage_id
       WHERE lm.matched_at >= p_from AND lm.matched_at <= p_to
-        -- filtra só leads de origem Meta (ignora leads sem origem ou de outros canais)
         AND EXISTS (
           SELECT 1 FROM utm_conversions uc
           WHERE uc.bitrix_deal_id = lm.bitrix_deal_id
@@ -63,15 +57,11 @@ BEGIN
         )
       ORDER BY lm.bitrix_deal_id, bsh.changed_at DESC
     ),
-
-    -- Etapas disponíveis (para saber quais colunas de funnel_rates existem)
     stage_ranks AS (
-      SELECT DISTINCT step_rank, funnel_step, name
+      SELECT DISTINCT step_rank, funnel_step, label AS name
       FROM bitrix_stage_map
       ORDER BY step_rank
     ),
-
-    -- Taxa de chegada por etapa, por ad (cumulativa: chegou nesta etapa OU passou dela)
     funnel_base AS (
       SELECT
         bs.ad_id,
@@ -82,8 +72,6 @@ BEGIN
       FROM best_stage bs
       GROUP BY bs.ad_id, bs.funnel_step, bs.step_rank, bs.stage_name
     ),
-
-    -- Crosstab: linhas = ad_id, colunas = funnel_step (com counts)
     funnel_rates_cte AS (
       SELECT
         fb.ad_id,
@@ -97,8 +85,6 @@ BEGIN
         ) AS cumulative_deals
       FROM funnel_base fb
     ),
-
-    -- Métricas derivadas
     combined AS (
       SELECT
         ma.ad_id,
@@ -133,8 +119,6 @@ BEGIN
       FROM meta_ads ma
       LEFT JOIN ad_leads al USING (ad_id)
     ),
-
-    -- Adicionar funnel_rates (Objeto JSON: step → {total, pct, step_rank})
     with_funnel AS (
       SELECT
         c.*,
@@ -157,7 +141,6 @@ BEGIN
         c.valor_gerado, c.valor_meta, c.valor_outros,
         c.ticket_medio, c.roas, c.cpl, c.ctr, c.cpm
     )
-
   SELECT jsonb_build_object(
     'stages',  (SELECT COALESCE(json_agg(jsonb_build_object('rank', step_rank, 'step', COALESCE(funnel_step, 'sem_mapeamento')) ORDER BY step_rank), '[]'::jsonb) FROM stage_ranks),
     'ads',     (SELECT COALESCE(json_agg(
@@ -184,9 +167,9 @@ BEGIN
         'cpm',          cpm,
         'funnel_rates', funnel_rates
       ) ORDER BY valor_gerado DESC NULLS LAST
-    , '[]'::jsonb) FROM with_funnel WHERE spend > 0 OR leads > 0)
+    ), '[]'::jsonb) FROM with_funnel WHERE spend > 0 OR leads > 0)
   ) INTO result;
 
   RETURN result;
 END;
-$$;
+$fn$;

@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.meta_lead_forms (
 GRANT SELECT ON public.meta_lead_forms TO anon, authenticated;
 GRANT ALL ON public.meta_lead_forms TO service_role;
 ALTER TABLE public.meta_lead_forms ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read meta_lead_forms" ON public.meta_lead_forms FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='meta_lead_forms' AND policyname='read meta_lead_forms') THEN CREATE POLICY "read meta_lead_forms" ON public.meta_lead_forms FOR SELECT USING (true); END IF; END $$;
 CREATE TRIGGER touch_meta_lead_forms BEFORE UPDATE ON public.meta_lead_forms
   FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.meta_leads (
 GRANT SELECT ON public.meta_leads TO anon, authenticated;
 GRANT ALL ON public.meta_leads TO service_role;
 ALTER TABLE public.meta_leads ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read meta_leads" ON public.meta_leads FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='meta_leads' AND policyname='read meta_leads') THEN CREATE POLICY "read meta_leads" ON public.meta_leads FOR SELECT USING (true); END IF; END $$;
 CREATE INDEX IF NOT EXISTS idx_meta_leads_phone ON public.meta_leads (telefone_norm);
 CREATE INDEX IF NOT EXISTS idx_meta_leads_email ON public.meta_leads (lower(email));
 CREATE INDEX IF NOT EXISTS idx_meta_leads_campaign ON public.meta_leads (campaign_id);
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS public.lead_match (
 GRANT SELECT ON public.lead_match TO anon, authenticated;
 GRANT ALL ON public.lead_match TO service_role;
 ALTER TABLE public.lead_match ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read lead_match" ON public.lead_match FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='lead_match' AND policyname='read lead_match') THEN CREATE POLICY "read lead_match" ON public.lead_match FOR SELECT USING (true); END IF; END $$;
 CREATE INDEX IF NOT EXISTS idx_lead_match_campaign ON public.lead_match (campaign_id);
 
 CREATE OR REPLACE FUNCTION public.rebuild_lead_match()

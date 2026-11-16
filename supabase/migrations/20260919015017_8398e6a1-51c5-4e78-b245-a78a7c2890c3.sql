@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.bitrix_stage_map (
 GRANT SELECT ON public.bitrix_stage_map TO anon, authenticated;
 GRANT ALL ON public.bitrix_stage_map TO service_role;
 ALTER TABLE public.bitrix_stage_map ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read bitrix_stage_map" ON public.bitrix_stage_map FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bitrix_stage_map' AND policyname='read bitrix_stage_map') THEN CREATE POLICY "read bitrix_stage_map" ON public.bitrix_stage_map FOR SELECT USING (true); END IF; END $$;
 
 CREATE TABLE IF NOT EXISTS public.campaign_lead_map (
   label text PRIMARY KEY,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.campaign_lead_map (
 GRANT SELECT ON public.campaign_lead_map TO anon, authenticated;
 GRANT ALL ON public.campaign_lead_map TO service_role;
 ALTER TABLE public.campaign_lead_map ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read campaign_lead_map" ON public.campaign_lead_map FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='campaign_lead_map' AND policyname='read campaign_lead_map') THEN CREATE POLICY "read campaign_lead_map" ON public.campaign_lead_map FOR SELECT USING (true); END IF; END $$;
 
 CREATE OR REPLACE FUNCTION public.touch_updated_at()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$

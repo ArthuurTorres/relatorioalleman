@@ -1,31 +1,43 @@
-CREATE TABLE public.bitrix_pipelines (
-  id text PRIMARY KEY,
-  name text NOT NULL,
-  sort integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+-- Idempotent version: tables may already exist from 20260918000000_create_base_tables.sql
+
+DO $$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'bitrix_pipelines') THEN
+ CREATE TABLE public.bitrix_pipelines (
+   id text PRIMARY KEY,
+   name text NOT NULL,
+   sort integer NOT NULL DEFAULT 0,
+   created_at timestamptz NOT NULL DEFAULT now(),
+   updated_at timestamptz NOT NULL DEFAULT now()
+ );
+ END IF;
+END $$;
 GRANT SELECT ON public.bitrix_pipelines TO anon, authenticated;
 GRANT ALL ON public.bitrix_pipelines TO service_role;
 ALTER TABLE public.bitrix_pipelines ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read bitrix_pipelines" ON public.bitrix_pipelines FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bitrix_pipelines' AND policyname='read bitrix_pipelines') THEN CREATE POLICY "read bitrix_pipelines" ON public.bitrix_pipelines FOR SELECT USING (true); END IF; END $$;
 
-CREATE TABLE public.bitrix_stages (
-  stage_id text PRIMARY KEY,
-  pipeline_id text NOT NULL,
-  name text NOT NULL,
-  sort integer NOT NULL DEFAULT 0,
-  semantics text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX idx_bitrix_stages_pipeline ON public.bitrix_stages (pipeline_id, sort);
+DO $$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'bitrix_stages') THEN
+ CREATE TABLE public.bitrix_stages (
+   stage_id text PRIMARY KEY,
+   pipeline_id text NOT NULL,
+   name text NOT NULL,
+   sort integer NOT NULL DEFAULT 0,
+   semantics text,
+   created_at timestamptz NOT NULL DEFAULT now(),
+   updated_at timestamptz NOT NULL DEFAULT now()
+ );
+ END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_bitrix_stages_pipeline ON public.bitrix_stages (pipeline_id, sort);
 GRANT SELECT ON public.bitrix_stages TO anon, authenticated;
 GRANT ALL ON public.bitrix_stages TO service_role;
 ALTER TABLE public.bitrix_stages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read bitrix_stages" ON public.bitrix_stages FOR SELECT USING (true);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bitrix_stages' AND policyname='read bitrix_stages') THEN CREATE POLICY "read bitrix_stages" ON public.bitrix_stages FOR SELECT USING (true); END IF; END $$;
 
+DROP TRIGGER IF EXISTS touch_bitrix_pipelines ON public.bitrix_pipelines;
 CREATE TRIGGER touch_bitrix_pipelines BEFORE UPDATE ON public.bitrix_pipelines FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
+DROP TRIGGER IF EXISTS touch_bitrix_stages ON public.bitrix_stages;
 CREATE TRIGGER touch_bitrix_stages BEFORE UPDATE ON public.bitrix_stages FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
 CREATE OR REPLACE FUNCTION public.get_bitrix_pipeline_funnel(
