@@ -113,7 +113,7 @@ async function handler(request: Request): Promise<Response> {
     }));
 
     for (let i = 0; i < rows.length; i += 100) {
-      const { error } = await supabaseAdmin
+      const { error } = await (supabaseAdmin as any)
         .from("bitrix_stage_history")
         .upsert(rows.slice(i, i + 100), { onConflict: "id" });
       if (error) {
