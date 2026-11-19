@@ -184,7 +184,7 @@ export const getFunnelCohort = createServerFn({ method: "POST" })
     for (let i = 0; i < dealIds.length; i += ID_CHUNK) {
       const chunk = dealIds.slice(i, i + ID_CHUNK);
       for (let page = 0; ; page += PAGE) {
-        const { data: history, error } = await supabase
+        const { data: history, error } = await (supabase as any)
           .from("bitrix_stage_history")
           .select("deal_id,stage_id")
           .in("deal_id", chunk)
