@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bitrix_stage_history: {
+        Row: {
+          category_id: number | null
+          changed_at: string
+          deal_id: string
+          id: number
+          semantics: string | null
+          stage_id: string
+          synced_at: string
+        }
+        Insert: {
+          category_id?: number | null
+          changed_at: string
+          deal_id: string
+          id: number
+          semantics?: string | null
+          stage_id: string
+          synced_at?: string
+        }
+        Update: {
+          category_id?: number | null
+          changed_at?: string
+          deal_id?: string
+          id?: number
+          semantics?: string | null
+          stage_id?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
       bitrix_stage_map: {
         Row: {
           created_at: string
