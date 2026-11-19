@@ -5,7 +5,7 @@ import {
   getRequestProtocol,
   getRequestUrl,
   setCookie,
-} from "@tanstack/start-server-core";
+} from "@tanstack/react-start/server";
 import { Buffer } from "node:buffer";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
