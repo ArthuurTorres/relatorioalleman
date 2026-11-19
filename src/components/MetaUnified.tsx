@@ -4,22 +4,35 @@ import { getMetaPerformance, getMetaSyncState } from "@/lib/meta.functions";
 import { getMetaDetail, type Filters } from "@/lib/utm.functions";
 import { TermSearch } from "@/components/TermSearch";
 import { MetaIcon } from "@/components/brand-icons";
-
+import { CHART, tooltipStyle } from "@/lib/dashboard-utils";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, Legend,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 
-const META = "oklch(0.7 0.19 305)";
-const META_ACCENT = "oklch(0.72 0.15 165)";
+const META = CHART.purple;
+const META_ACCENT = CHART.green;
 const currency = (n: number | null | undefined) =>
   n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (n: number | null | undefined) =>
@@ -70,36 +83,44 @@ export function MetaUnified({ filters }: { filters: Filters }) {
   const loading = perf.isLoading || detail.isLoading;
 
   return (
-    <Card className="bento-card border-0 relative overflow-hidden">
+    <Card className="bento-card relative overflow-hidden border-0">
       <div
         className="absolute left-0 top-0 h-full w-1"
-        style={{ background: `linear-gradient(180deg, ${META}, ${META_ACCENT})` }}
+        style={{ background: "var(--grad-accent)" }}
         aria-hidden
       />
-      <CardHeader className="pt-6 px-6 pb-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Performance de mídia paga</p>
-<CardTitle className="font-display text-xl mt-1 flex items-center gap-2.5">
+      <CardHeader className="px-6 pt-6 pb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Performance de mídia paga
+        </p>
+        <CardTitle className="mt-1 flex items-center gap-2.5 font-display text-xl">
           <MetaIcon className="h-6 w-6 shrink-0" />
           Meta Ads · Investimento, CPL e Leads
         </CardTitle>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-2 text-xs text-muted-foreground">
           Cruzamento entre gasto do Meta e conversões do Bitrix, com detalhamento de UTMs, placements e páginas
           {sync.data?.lastSync && (
-            <> · última sync: <span className="tabular-nums text-foreground/70">{new Date(sync.data.lastSync).toLocaleString("pt-BR")}</span></>
+            <>
+              {" "}
+              · última sync:{" "}
+              <span className="font-medium text-foreground/80 tabular-nums">
+                {new Date(sync.data.lastSync).toLocaleString("pt-BR")}
+              </span>
+            </>
           )}
         </p>
       </CardHeader>
-      <CardContent className="px-6 pb-6 space-y-8">
+      <CardContent className="space-y-7 px-6 pb-6">
         {loading ? (
           <Skeleton className="h-96 w-full" />
         ) : perf.isError ? (
-          <p className="text-sm text-destructive py-8 text-center">
+          <p className="py-8 text-center text-sm text-destructive">
             Erro ao carregar: {(perf.error as Error).message}
           </p>
         ) : (
           <>
-            {/* KPI Cards — investimento & CPL primeiro */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
               <Kpi label="Investido" value={currency(p?.summary.spend ?? 0)} highlight />
               <Kpi
                 label="CPL real (Meta)"
@@ -127,33 +148,46 @@ export function MetaUnified({ filters }: { filters: Filters }) {
 
             <TermSearch filters={filters} />
 
-
-
-
             {/* Daily chart: spend vs leads */}
             {p && p.daily.length > 0 && (
-              <div className="rounded-xl border border-white/5 bg-black/10 p-5">
+              <div className="rounded-xl border border-border bg-muted/35 p-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Diário</p>
-                <p className="font-display text-base mt-1 mb-4">Gasto vs leads</p>
+                <p className="mt-1 mb-4 font-display text-base font-semibold">Gasto vs leads</p>
                 <div style={{ height: 260 }}>
                   <ResponsiveContainer>
                     <LineChart
                       data={mergeDaily(p.daily, d?.daily ?? [])}
                       margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="2 4" stroke="oklch(1 0 0 / 0.05)" vertical={false} />
-                      <XAxis dataKey="day" fontSize={11} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} />
-                      <YAxis yAxisId="left" fontSize={11} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} tickFormatter={(v) => `R$${(v / 1000).toFixed(1)}k`} width={52} />
-                      <YAxis yAxisId="right" orientation="right" fontSize={11} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} width={32} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis dataKey="day" fontSize={11} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                      <YAxis
+                        yAxisId="left"
+                        fontSize={11}
+                        stroke="var(--muted-foreground)"
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `R$${(v / 1000).toFixed(1)}k`}
+                        width={52}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        fontSize={11}
+                        stroke="var(--muted-foreground)"
+                        tickLine={false}
+                        axisLine={false}
+                        width={32}
+                      />
                       <Tooltip
-                        contentStyle={{ background: "oklch(0.19 0.035 250)", border: "1px solid oklch(1 0 0 / 0.08)", borderRadius: 10, color: "oklch(0.97 0.005 240)", fontSize: 12, padding: "8px 12px" }}
-                        cursor={{ stroke: "oklch(1 0 0 / 0.1)", strokeWidth: 1 }}
-                        formatter={(v: any, name: string) => name === "Gasto" ? currency(Number(v)) : v}
+                        contentStyle={tooltipStyle}
+                        cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                        formatter={(v: any, name: string) => (name === "Gasto" ? currency(Number(v)) : v)}
                       />
                       <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" />
-                      <Line yAxisId="left" type="monotone" dataKey="spend" name="Gasto" stroke={META} strokeWidth={3} dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                      <Line yAxisId="right" type="monotone" dataKey="leads" name="Leads" stroke={META_ACCENT} strokeWidth={3} dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                      <Line yAxisId="right" type="monotone" dataKey="clicks" name="Cliques" stroke="oklch(0.78 0.14 230)" strokeWidth={2} dot={false} strokeDasharray="4 4" />
+                      <Line yAxisId="left" type="monotone" dataKey="spend" name="Gasto" stroke={META} strokeWidth={2.5} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                      <Line yAxisId="right" type="monotone" dataKey="leads" name="Leads" stroke={META_ACCENT} strokeWidth={2.5} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                      <Line yAxisId="right" type="monotone" dataKey="clicks" name="Cliques" stroke={CHART.cyan} strokeWidth={2} dot={false} strokeDasharray="4 4" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -161,19 +195,20 @@ export function MetaUnified({ filters }: { filters: Filters }) {
             )}
 
             <Tabs defaultValue="campaign">
-              <TabsList className="flex-wrap h-auto bg-card/40 border border-white/10 backdrop-blur p-1">
-                <TabsTrigger value="campaign" className="text-xs data-[state=active]:bg-white/5">Campanhas</TabsTrigger>
-                <TabsTrigger value="adset" className="text-xs data-[state=active]:bg-white/5">Adsets</TabsTrigger>
-                <TabsTrigger value="ad" className="text-xs data-[state=active]:bg-white/5">Anúncios</TabsTrigger>
-                <TabsTrigger value="utm" className="text-xs data-[state=active]:bg-white/5">UTMs (Bitrix)</TabsTrigger>
-                <TabsTrigger value="placement" className="text-xs data-[state=active]:bg-white/5">Placements (Bitrix)</TabsTrigger>
-                <TabsTrigger value="page" className="text-xs data-[state=active]:bg-white/5">Páginas (Bitrix)</TabsTrigger>
-              </TabsList>
-
+              <div className="overflow-x-auto pb-0.5">
+                <TabsList className="h-auto w-max justify-start gap-1">
+                  <TabsTrigger value="campaign" className="text-xs">Campanhas</TabsTrigger>
+                  <TabsTrigger value="adset" className="text-xs">Adsets</TabsTrigger>
+                  <TabsTrigger value="ad" className="text-xs">Anúncios</TabsTrigger>
+                  <TabsTrigger value="utm" className="text-xs">UTMs (Bitrix)</TabsTrigger>
+                  <TabsTrigger value="placement" className="text-xs">Placements (Bitrix)</TabsTrigger>
+                  <TabsTrigger value="page" className="text-xs">Páginas (Bitrix)</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="campaign">
                 {p && p.byCampaign.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -193,30 +228,41 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                       <TableBody>
                         {p.byCampaign.map((r) => (
                           <TableRow key={r.campaign_id}>
-                            <TableCell className="font-medium max-w-xs truncate">{r.campaign_name}</TableCell>
+                            <TableCell className="max-w-xs truncate font-medium">{r.campaign_name}</TableCell>
                             <TableCell>{statusBadge(r.status)}</TableCell>
-                            <TableCell className="text-right">{currency(r.spend)}</TableCell>
-                            <TableCell className="text-right">{num(r.impressions)}</TableCell>
-                            <TableCell className="text-right">{num(r.clicks)}</TableCell>
-                            <TableCell className="text-right">{pct(r.ctr)}</TableCell>
-                            <TableCell className="text-right">{currency(r.cpc)}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant={r.leads > 0 ? "default" : "secondary"} title={r.leads_crm > 0 ? `${r.leads_crm} leads atribuídos no CRM` : `${r.leads_meta} leads informados pelo Meta Ads`}>{r.leads}</Badge>
+                            <TableCell className="text-right tabular-nums">{currency(r.spend)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.impressions)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{pct(r.ctr)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{currency(r.cpc)}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <Badge
+                                variant={r.leads > 0 ? "default" : "secondary"}
+                                title={
+                                  r.leads_crm > 0
+                                    ? `${r.leads_crm} leads atribuídos no CRM`
+                                    : `${r.leads_meta} leads informados pelo Meta Ads`
+                                }
+                              >
+                                {r.leads}
+                              </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-semibold">{currency(r.cpl)}</TableCell>
-                            <TableCell className="text-right">{currency(r.valor_gerado)}</TableCell>
-                            <TableCell className="text-right">{roas(r.roas)}</TableCell>
+                            <TableCell className="text-right font-semibold tabular-nums">{currency(r.cpl)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{currency(r.valor_gerado)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{roas(r.roas)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
 
               <TabsContent value="adset">
                 {p && p.byAdset.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -234,28 +280,39 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                       <TableBody>
                         {p.byAdset.map((r) => (
                           <TableRow key={r.adset_id}>
-                            <TableCell className="font-medium max-w-xs truncate">{r.adset_name}</TableCell>
-                            <TableCell className="text-muted-foreground max-w-xs truncate">{r.campaign_name}</TableCell>
-                            <TableCell className="text-right">{currency(r.spend)}</TableCell>
-                            <TableCell className="text-right">{num(r.impressions)}</TableCell>
-                            <TableCell className="text-right">{num(r.clicks)}</TableCell>
-                            <TableCell className="text-right">{pct(r.ctr)}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant={r.leads > 0 ? "default" : "secondary"} title={r.leads_crm > 0 ? `${r.leads_crm} leads atribuídos no CRM` : `${r.leads_meta} leads informados pelo Meta Ads`}>{r.leads}</Badge>
+                            <TableCell className="max-w-xs truncate font-medium">{r.adset_name}</TableCell>
+                            <TableCell className="max-w-xs truncate text-muted-foreground">{r.campaign_name}</TableCell>
+                            <TableCell className="text-right tabular-nums">{currency(r.spend)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.impressions)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{pct(r.ctr)}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <Badge
+                                variant={r.leads > 0 ? "default" : "secondary"}
+                                title={
+                                  r.leads_crm > 0
+                                    ? `${r.leads_crm} leads atribuídos no CRM`
+                                    : `${r.leads_meta} leads informados pelo Meta Ads`
+                                }
+                              >
+                                {r.leads}
+                              </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-semibold">{currency(r.cpl)}</TableCell>
-                            <TableCell className="text-right">{roas(r.roas)}</TableCell>
+                            <TableCell className="text-right font-semibold tabular-nums">{currency(r.cpl)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{roas(r.roas)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
 
               <TabsContent value="ad">
                 {p && p.byAd.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -274,29 +331,40 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                       <TableBody>
                         {p.byAd.map((r) => (
                           <TableRow key={r.ad_id}>
-                            <TableCell className="font-medium max-w-[220px] truncate">{r.ad_name}</TableCell>
-                            <TableCell className="text-muted-foreground max-w-[160px] truncate">{r.adset_name}</TableCell>
-                            <TableCell className="text-muted-foreground max-w-[160px] truncate">{r.campaign_name}</TableCell>
-                            <TableCell className="text-right">{currency(r.spend)}</TableCell>
-                            <TableCell className="text-right">{num(r.impressions)}</TableCell>
-                            <TableCell className="text-right">{num(r.clicks)}</TableCell>
-                            <TableCell className="text-right">{pct(r.ctr)}</TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant={r.leads > 0 ? "default" : "secondary"} title={r.leads_crm > 0 ? `${r.leads_crm} leads atribuídos no CRM` : `${r.leads_meta} leads informados pelo Meta Ads`}>{r.leads}</Badge>
+                            <TableCell className="max-w-[220px] truncate font-medium">{r.ad_name}</TableCell>
+                            <TableCell className="max-w-[160px] truncate text-muted-foreground">{r.adset_name}</TableCell>
+                            <TableCell className="max-w-[160px] truncate text-muted-foreground">{r.campaign_name}</TableCell>
+                            <TableCell className="text-right tabular-nums">{currency(r.spend)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.impressions)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{num(r.clicks)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{pct(r.ctr)}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <Badge
+                                variant={r.leads > 0 ? "default" : "secondary"}
+                                title={
+                                  r.leads_crm > 0
+                                    ? `${r.leads_crm} leads atribuídos no CRM`
+                                    : `${r.leads_meta} leads informados pelo Meta Ads`
+                                }
+                              >
+                                {r.leads}
+                              </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-semibold">{currency(r.cpl)}</TableCell>
-                            <TableCell className="text-right">{roas(r.roas)}</TableCell>
+                            <TableCell className="text-right font-semibold tabular-nums">{currency(r.cpl)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{roas(r.roas)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
 
               <TabsContent value="utm">
                 {d && d.byUtm.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -312,24 +380,26 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                       <TableBody>
                         {d.byUtm.map((r, i) => (
                           <TableRow key={i}>
-                            <TableCell><code className="text-xs">{r.utm_source ?? "—"}</code></TableCell>
-                            <TableCell><code className="text-xs">{r.utm_medium ?? "—"}</code></TableCell>
-                            <TableCell><code className="text-xs max-w-[200px] truncate inline-block">{r.utm_campaign ?? "—"}</code></TableCell>
-                            <TableCell><code className="text-xs max-w-[160px] truncate inline-block">{r.utm_content ?? "—"}</code></TableCell>
-                            <TableCell><code className="text-xs max-w-[140px] truncate inline-block">{r.utm_term ?? "—"}</code></TableCell>
-                            <TableCell className="text-right"><Badge variant="secondary">{r.count}</Badge></TableCell>
-                            <TableCell className="text-right">{currency(r.valor)}</TableCell>
+                            <TableCell><code className="font-mono text-xs">{r.utm_source ?? "—"}</code></TableCell>
+                            <TableCell><code className="font-mono text-xs">{r.utm_medium ?? "—"}</code></TableCell>
+                            <TableCell><code className="inline-block max-w-[200px] truncate font-mono text-xs">{r.utm_campaign ?? "—"}</code></TableCell>
+                            <TableCell><code className="inline-block max-w-[160px] truncate font-mono text-xs">{r.utm_content ?? "—"}</code></TableCell>
+                            <TableCell><code className="inline-block max-w-[140px] truncate font-mono text-xs">{r.utm_term ?? "—"}</code></TableCell>
+                            <TableCell className="text-right tabular-nums"><Badge variant="secondary">{r.count}</Badge></TableCell>
+                            <TableCell className="text-right tabular-nums">{currency(r.valor)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
 
               <TabsContent value="placement">
                 {d && d.byPlacement.length > 0 ? (
-                  <div style={{ height: 320 }}>
+                  <div className="rounded-xl border border-border bg-muted/25 p-4" style={{ height: 340 }}>
                     <ResponsiveContainer>
                       <BarChart
                         data={d.byPlacement.slice(0, 15).map((pl) => ({
@@ -337,21 +407,24 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                           count: pl.count,
                         }))}
                         layout="vertical"
-                        margin={{ left: 150 }}
+                        margin={{ left: 150, right: 12 }}
                       >
-                        <XAxis type="number" fontSize={11} />
-                        <YAxis type="category" dataKey="label" fontSize={11} width={150} />
-                        <Tooltip />
-                        <Bar dataKey="count" fill={META} radius={[0, 4, 4, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" fontSize={11} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                        <YAxis type="category" dataKey="label" fontSize={11} width={150} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--chart-cursor)" }} />
+                        <Bar dataKey="count" name="Leads" fill={META} radius={[0, 5, 5, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
 
               <TabsContent value="page">
                 {d && d.byPage.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -364,16 +437,17 @@ export function MetaUnified({ filters }: { filters: Filters }) {
                         {d.byPage.map((r, i) => (
                           <TableRow key={i}>
                             <TableCell className="font-medium">{r.dominio ?? "—"}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground max-w-md truncate">{r.url_pagina ?? "—"}</TableCell>
-                            <TableCell className="text-right"><Badge variant="secondary">{r.count}</Badge></TableCell>
+                            <TableCell className="max-w-md truncate text-xs text-muted-foreground">{r.url_pagina ?? "—"}</TableCell>
+                            <TableCell className="text-right tabular-nums"><Badge variant="secondary">{r.count}</Badge></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                ) : <EmptyState />}
+                ) : (
+                  <EmptyState />
+                )}
               </TabsContent>
-
             </Tabs>
           </>
         )}
@@ -384,7 +458,7 @@ export function MetaUnified({ filters }: { filters: Filters }) {
 
 function EmptyState() {
   return (
-    <p className="text-sm text-muted-foreground py-8 text-center">
+    <p className="py-8 text-center text-sm text-muted-foreground">
       Sem dados no período selecionado
     </p>
   );
@@ -412,13 +486,18 @@ function Kpi({ label, value, sub, highlight }: { label: string; value: string; s
       className={`relative overflow-hidden rounded-xl border p-4 transition-colors ${
         highlight
           ? "border-primary/25 bg-primary/[0.06]"
-          : "border-white/8 bg-card/40 hover:border-white/15"
+          : "border-border bg-muted/25 hover:border-primary/25"
       }`}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-      <p className={`font-display text-xl font-bold mt-2 tracking-[-0.02em] tabular-nums ${highlight ? "text-primary" : "text-foreground"}`}>{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-1.5">{sub}</p>}
+      <p
+        className={`mt-2 font-display text-xl font-bold tracking-[-0.02em] tabular-nums ${
+          highlight ? "text-primary" : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
+      {sub && <p className="mt-1.5 text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
-

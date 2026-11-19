@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
+import { Trash2 } from "lucide-react";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -21,11 +22,11 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 const STATUS_TONE: Record<Status, string> = {
-  "sem-meta": "text-muted-foreground bg-white/[0.05]",
-  atingida: "text-emerald-300 bg-emerald-400/10",
-  ritmo: "text-emerald-300 bg-emerald-400/10",
-  atencao: "text-amber-300 bg-amber-400/10",
-  risco: "text-red-300 bg-red-400/10",
+  "sem-meta": "text-muted-foreground bg-muted ring-1 ring-border",
+  atingida: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/12 ring-1 ring-emerald-500/25",
+  ritmo: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/12 ring-1 ring-emerald-500/25",
+  atencao: "text-amber-700 dark:text-amber-300 bg-amber-500/12 ring-1 ring-amber-500/25",
+  risco: "text-red-700 dark:text-red-300 bg-red-500/12 ring-1 ring-red-500/25",
 };
 
 const dec = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -87,44 +88,65 @@ export function LeadGoals() {
     return { metaTotal, entregue, google, meta, pct, restantes, projecao, excedente: Math.max(0, entregue - metaTotal) };
   }, [rows, elapsed, days]);
 
+  const pctTone = (pct: number | null) =>
+    pct == null
+      ? "text-muted-foreground"
+      : pct >= 100
+        ? "text-emerald-700 dark:text-emerald-300 font-medium"
+        : pct >= 75
+          ? "text-amber-700 dark:text-amber-300 font-medium"
+          : "text-red-700 dark:text-red-300 font-medium";
+
   return (
     <div className="space-y-4">
-      <div className="bento-card p-4">
+      <div className="bento-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-display text-[15px] font-semibold">Metas de leads por operadora</h3>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Pacing Comercial
+            </p>
+            <h3 className="mt-0.5 font-display text-base font-semibold tracking-tight text-foreground">
+              Metas de leads por operadora
+            </h3>
+            <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
               Dia {d?.elapsedDays ?? 0} de {days} · {remainingDays} dia(s) restante(s)
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select
+              aria-label="Selecionar mês"
               value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
-              className="rounded-lg border border-white/10 bg-card/60 px-2.5 py-1.5 text-[12px]"
+              className="h-8 cursor-pointer rounded-lg border border-border bg-background px-2.5 text-[12px] text-foreground"
             >
               {MONTHS.map((m, i) => (
-                <option key={m} value={i + 1}>{m}</option>
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
               ))}
             </select>
             <select
+              aria-label="Selecionar ano"
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="rounded-lg border border-white/10 bg-card/60 px-2.5 py-1.5 text-[12px]"
+              className="h-8 cursor-pointer rounded-lg border border-border bg-background px-2.5 text-[12px] text-foreground"
             >
               {[initial.year - 1, initial.year, initial.year + 1].map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </select>
-            <div className="flex shrink-0 gap-0.5 rounded-lg border border-white/10 bg-card/40 p-0.5">
+            <div className="flex shrink-0 gap-0.5 rounded-lg border border-border bg-muted/60 p-0.5">
               {(["cards", "tabela"] as const).map((v) => (
                 <button
                   key={v}
+                  type="button"
                   onClick={() => setView(v)}
                   className={
                     view === v
-                      ? "rounded-md bg-primary/15 px-2.5 py-1 text-[11px] font-medium capitalize text-primary"
-                      : "rounded-md px-2.5 py-1 text-[11px] capitalize text-muted-foreground hover:text-foreground"
+                      ? "cursor-pointer rounded-md bg-card px-2.5 py-1 text-[11px] font-medium capitalize text-foreground shadow-2xs ring-1 ring-border"
+                      : "cursor-pointer rounded-md px-2.5 py-1 text-[11px] capitalize text-muted-foreground hover:text-foreground"
                   }
                 >
                   {v}
@@ -136,20 +158,28 @@ export function LeadGoals() {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <Card label="Meta total" value={nfmt(totals.metaTotal)} hint="Somente operadoras com meta" />
-          <Card
+          <SummaryStat label="Meta total" value={nfmt(totals.metaTotal)} hint="Somente operadoras com meta" />
+          <SummaryStat
             label="Total entregue"
             value={nfmt(totals.entregue)}
             hint={`Google ${nfmt(totals.google)} · Meta ${nfmt(totals.meta)}`}
           />
-          <Card
+          <SummaryStat
             label="% atingido"
             value={totals.pct == null ? "—" : `${dec(totals.pct)}%`}
             hint={totals.excedente > 0 ? `Excedente ${nfmt(totals.excedente)}` : "—"}
-            tone={totals.pct == null ? undefined : totals.pct >= 100 ? "text-emerald-300" : totals.pct >= 75 ? "text-amber-300" : "text-red-300"}
+            tone={pctTone(totals.pct)}
           />
-          <Card label="Leads restantes" value={nfmt(totals.restantes)} hint={remainingDays > 0 ? `${dec(totals.restantes / remainingDays)}/dia` : "—"} />
-          <Card label="Projeção de fechamento" value={nfmt(Math.round(totals.projecao))} hint={`Média ${dec(totals.entregue / elapsed)}/dia`} />
+          <SummaryStat
+            label="Leads restantes"
+            value={nfmt(totals.restantes)}
+            hint={remainingDays > 0 ? `${dec(totals.restantes / remainingDays)}/dia` : "—"}
+          />
+          <SummaryStat
+            label="Projeção de fechamento"
+            value={nfmt(Math.round(totals.projecao))}
+            hint={`Média ${dec(totals.entregue / elapsed)}/dia`}
+          />
         </div>
       </div>
 
@@ -157,127 +187,136 @@ export function LeadGoals() {
         {q.isLoading ? (
           <p className="p-8 text-center text-sm text-muted-foreground">Carregando metas…</p>
         ) : q.isError ? (
-          <p className="p-8 text-center text-sm text-red-300">Não foi possível carregar as metas.</p>
+          <p className="p-8 text-center text-sm text-destructive">Não foi possível carregar as metas.</p>
         ) : rows.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
             Nenhuma meta cadastrada para {MONTHS[month - 1]}/{year}. Use “Gerenciar metas”.
           </p>
         ) : view === "cards" ? (
-          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3.5 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
             {rows.map((r) => (
-              <div key={r.id} className="rounded-xl border border-white/[0.06] bg-card/60 p-4">
+              <div key={r.id} className="rounded-xl border border-border bg-muted/20 p-4 transition-colors hover:border-primary/25">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 truncate text-[13px] font-semibold">{r.operadora}</p>
-                  <span className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] ${STATUS_TONE[r.status]}`}>
+                  <p className="min-w-0 truncate text-[13px] font-semibold text-foreground">{r.operadora}</p>
+                  <span className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium ${STATUS_TONE[r.status]}`}>
                     {STATUS_LABEL[r.status]}
                   </span>
                 </div>
 
                 <div className="mt-3 flex items-end justify-between gap-2">
-                  <p className="font-display text-2xl font-semibold tabular-nums">{nfmt(r.entregue)}</p>
+                  <p className="font-display text-2xl font-semibold text-foreground tabular-nums">{nfmt(r.entregue)}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    meta <span className="tabular-nums text-foreground">{r.meta_leads > 0 ? nfmt(r.meta_leads) : "—"}</span>
+                    meta{" "}
+                    <span className="font-medium text-foreground tabular-nums">
+                      {r.meta_leads > 0 ? nfmt(r.meta_leads) : "—"}
+                    </span>
                   </p>
                 </div>
 
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${Math.min(100, r.pct ?? 0)}%`, background: "var(--grad-accent)" }}
                   />
                 </div>
                 <div className="mt-1.5 flex items-center justify-between text-[11px]">
-                  <span
-                    className={
-                      r.pct == null
-                        ? "text-muted-foreground"
-                        : r.pct >= 100
-                          ? "text-emerald-300"
-                          : r.pct >= 75
-                            ? "text-amber-300"
-                            : "text-red-300"
-                    }
-                  >
-                    {r.pct == null ? "Sem meta" : `${dec(r.pct)}%`}
-                  </span>
-                  <span className="text-muted-foreground/70">
-                    {r.excedente > 0 ? `+${nfmt(r.excedente)} excedente` : r.meta_leads > 0 ? `faltam ${nfmt(r.restantes)}` : ""}
+                  <span className={pctTone(r.pct)}>{r.pct == null ? "Sem meta" : `${dec(r.pct)}%`}</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {r.excedente > 0
+                      ? `+${nfmt(r.excedente)} excedente`
+                      : r.meta_leads > 0
+                        ? `faltam ${nfmt(r.restantes)}`
+                        : ""}
                   </span>
                 </div>
 
-<div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 text-[11px]">
                   <div>
                     <p className="flex items-center gap-1 text-muted-foreground">
-                      <GoogleAdsIcon className="h-4 w-4" /> Google Ads
+                      <GoogleAdsIcon className="h-3.5 w-3.5 shrink-0" /> Google Ads
                     </p>
-                    <p className="mt-0.5 tabular-nums text-[oklch(0.78_0.14_230)]">{nfmt(r.google)}</p>
+                    <p className="mt-0.5 font-medium text-sky-700 tabular-nums dark:text-sky-300">{nfmt(r.google)}</p>
                   </div>
                   <div>
                     <p className="flex items-center gap-1 text-muted-foreground">
-                      <MetaIcon className="h-4 w-4" /> Meta Ads
+                      <MetaIcon className="h-3.5 w-3.5 shrink-0" /> Meta Ads
                     </p>
-                    <p className="mt-0.5 tabular-nums text-[oklch(0.7_0.19_305)]">{nfmt(r.meta)}</p>
+                    <p className="mt-0.5 font-medium text-indigo-700 tabular-nums dark:text-indigo-300">{nfmt(r.meta)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Média/dia</p>
-                    <p className="mt-0.5 tabular-nums">{dec(r.mediaDia)}</p>
+                    <p className="mt-0.5 font-medium text-foreground tabular-nums">{dec(r.mediaDia)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Nec./dia</p>
-                    <p className="mt-0.5 tabular-nums">{r.meta_leads > 0 ? dec(r.necessarioDia) : "—"}</p>
+                    <p className="mt-0.5 font-medium text-foreground tabular-nums">
+                      {r.meta_leads > 0 ? dec(r.necessarioDia) : "—"}
+                    </p>
                   </div>
                 </div>
 
-                <p className="mt-2 text-[11px] text-muted-foreground/70">
+                <p className="mt-2.5 text-[11px] text-muted-foreground tabular-nums">
                   Projeção {nfmt(Math.round(r.projecao))} leads no mês
                 </p>
               </div>
             ))}
           </div>
         ) : (
-          <div className="scroll-thin overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-[12px]">
               <thead className="sticky top-0 bg-card/95 backdrop-blur">
-                <tr className="border-b border-white/[0.06] text-left text-[11px] text-muted-foreground">
-                  <th className="px-3 py-2.5">Operadora</th>
-<th className="px-3 py-2.5 text-right">Meta</th>
+                <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2.5">Operadora</th>
+                  <th className="px-3 py-2.5 text-right">Meta</th>
                   <th className="px-3 py-2.5 text-right">
-                    <span className="inline-flex items-center gap-1"><GoogleAdsIcon className="h-4 w-4" /> Google Ads</span>
+                    <span className="inline-flex items-center gap-1">
+                      <GoogleAdsIcon className="h-3.5 w-3.5" /> Google Ads
+                    </span>
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <span className="inline-flex items-center gap-1"><MetaIcon className="h-4 w-4" /> Meta Ads</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MetaIcon className="h-3.5 w-3.5" /> Meta Ads
+                    </span>
                   </th>
                   <th className="px-3 py-2.5 text-right">Entregue</th>
-                  <th className="px-3 py-2.5 w-[160px]">Progresso</th>
+                  <th className="w-[160px] px-3 py-2.5">Progresso</th>
                   <th className="px-3 py-2.5 text-right">%</th>
                   <th className="px-3 py-2.5 text-right">Média/dia</th>
                   <th className="px-3 py-2.5 text-right">Nec./dia</th>
                   <th className="px-3 py-2.5 text-right">Projeção</th>
-                  <th className="px-3 py-2.5">Status</th>
+                  <th className="px-4 py-2.5">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]">
-                    <td className="px-3 py-2.5 font-medium">{r.operadora}</td>
+                  <tr key={r.id} className="zebra-row border-b border-border last:border-0">
+                    <td className="px-4 py-2.5 font-medium text-foreground">{r.operadora}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{r.meta_leads > 0 ? nfmt(r.meta_leads) : "—"}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-[oklch(0.78_0.14_230)]">{nfmt(r.google)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-[oklch(0.7_0.19_305)]">{nfmt(r.meta)}</td>
+                    <td className="px-3 py-2.5 text-right font-medium text-sky-700 tabular-nums dark:text-sky-300">
+                      {nfmt(r.google)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium text-indigo-700 tabular-nums dark:text-indigo-300">
+                      {nfmt(r.meta)}
+                    </td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{nfmt(r.entregue)}</td>
                     <td className="px-3 py-2.5">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full rounded-full"
                           style={{ width: `${Math.min(100, r.pct ?? 0)}%`, background: "var(--grad-accent)" }}
                         />
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{r.pct == null ? "—" : `${dec(r.pct)}%`}</td>
+                    <td className={`px-3 py-2.5 text-right tabular-nums ${pctTone(r.pct)}`}>
+                      {r.pct == null ? "—" : `${dec(r.pct)}%`}
+                    </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{dec(r.mediaDia)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{r.meta_leads > 0 ? dec(r.necessarioDia) : "—"}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {r.meta_leads > 0 ? dec(r.necessarioDia) : "—"}
+                    </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{nfmt(Math.round(r.projecao))}</td>
-                    <td className="px-3 py-2.5">
-                      <span className={`rounded-md px-2 py-1 text-[11px] ${STATUS_TONE[r.status]}`}>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${STATUS_TONE[r.status]}`}>
                         {STATUS_LABEL[r.status]}
                         {r.excedente > 0 ? ` · +${nfmt(r.excedente)}` : ""}
                       </span>
@@ -289,7 +328,7 @@ export function LeadGoals() {
           </div>
         )}
         {d ? (
-          <p className="px-3 py-3 text-[11px] text-muted-foreground/70">
+          <p className="border-t border-border px-4 py-3 text-[11px] text-muted-foreground sm:px-5">
             Leads reais das integrações (Bitrix/Meta/Google). Sem correspondência de operadora neste mês: Google{" "}
             {nfmt(d.unmatched.google)} · Meta {nfmt(d.unmatched.meta)} — ajuste os termos em “Gerenciar metas”.
           </p>
@@ -299,12 +338,12 @@ export function LeadGoals() {
   );
 }
 
-function Card({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
+function SummaryStat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-card/60 p-3">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className={`mt-1 font-display text-xl font-semibold tabular-nums ${tone ?? ""}`}>{value}</p>
-      {hint ? <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">{hint}</p> : null}
+    <div className="rounded-xl border border-border bg-muted/25 p-3.5">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p className={`mt-1 font-display text-xl font-semibold tabular-nums ${tone ?? "text-foreground"}`}>{value}</p>
+      {hint ? <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
@@ -350,7 +389,10 @@ function ManageGoals({
             .map((i, idx) => ({
               operadora: i.operadora,
               meta_leads: Number(i.meta_leads) || 0,
-              match_terms: i.match_terms.split(",").map((t) => t.trim()).filter(Boolean),
+              match_terms: i.match_terms
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean),
               sort_order: idx + 1,
             })),
         },
@@ -372,78 +414,112 @@ function ManageGoals({
   return (
     <Dialog open={open} onOpenChange={openDialog}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8 text-[12px]">
+        <Button size="sm" variant="outline" className="h-8 cursor-pointer border-border bg-background text-[12px]">
           Gerenciar metas
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[88vh] w-[calc(100vw-1.5rem)] max-w-3xl overflow-y-auto rounded-xl border-border bg-card p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-[15px]">
+          <DialogTitle className="font-display text-base">
             Metas de leads — {MONTHS[month - 1]}/{year}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" className="h-8 text-[12px]" onClick={() => copy.mutate()} disabled={copy.isPending}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 cursor-pointer border-border text-[12px]"
+            onClick={() => copy.mutate()}
+            disabled={copy.isPending}
+          >
             {copy.isPending ? "Duplicando…" : "Duplicar metas do mês anterior"}
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 text-[12px]"
+            className="h-8 cursor-pointer text-[12px]"
             onClick={() => setItems((p) => [...p, { operadora: "", meta_leads: "0", match_terms: "" }])}
           >
             + Adicionar operadora
           </Button>
         </div>
 
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_90px_1.4fr_32px] gap-2 text-[11px] text-muted-foreground">
+        <div className="space-y-2.5">
+          <div className="hidden gap-2 text-[11px] font-medium text-muted-foreground sm:grid sm:grid-cols-[minmax(140px,1fr)_96px_minmax(180px,1.5fr)_36px]">
             <span>Operadora</span>
             <span>Meta</span>
             <span>Termos de correspondência (separados por vírgula)</span>
             <span />
           </div>
           {items.map((it, idx) => (
-            <div key={idx} className="grid grid-cols-[1fr_90px_1.4fr_32px] gap-2">
-              <Input
-                value={it.operadora}
-                onChange={(e) => setItems((p) => p.map((x, i) => (i === idx ? { ...x, operadora: e.target.value } : x)))}
-                className="h-8 text-[12px]"
-              />
-              <Input
-                inputMode="numeric"
-                value={it.meta_leads}
-                onChange={(e) => setItems((p) => p.map((x, i) => (i === idx ? { ...x, meta_leads: e.target.value } : x)))}
-                className="h-8 text-[12px]"
-              />
-              <Input
-                value={it.match_terms}
-                onChange={(e) => setItems((p) => p.map((x, i) => (i === idx ? { ...x, match_terms: e.target.value } : x)))}
-                className="h-8 text-[12px]"
-                placeholder="ex.: bensaude, ben saude"
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 px-2 text-[12px] text-red-300"
-                onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
-              >
-                ×
-              </Button>
+            <div
+              key={idx}
+              className="space-y-2 rounded-lg border border-border bg-muted/25 p-3 sm:grid sm:grid-cols-[minmax(140px,1fr)_96px_minmax(180px,1.5fr)_36px] sm:items-center sm:gap-2 sm:space-y-0 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_88px_36px] items-end gap-2 sm:contents">
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:hidden">
+                    Operadora
+                  </label>
+                  <Input
+                    value={it.operadora}
+                    onChange={(e) =>
+                      setItems((p) => p.map((x, i) => (i === idx ? { ...x, operadora: e.target.value } : x)))
+                    }
+                    placeholder="Nome da operadora"
+                    className="h-9 border-input bg-background text-[12px] sm:h-8"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:hidden">
+                    Meta
+                  </label>
+                  <Input
+                    inputMode="numeric"
+                    value={it.meta_leads}
+                    onChange={(e) =>
+                      setItems((p) => p.map((x, i) => (i === idx ? { ...x, meta_leads: e.target.value } : x)))
+                    }
+                    className="h-9 border-input bg-background text-[12px] tabular-nums sm:h-8"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Remover ${it.operadora || "operadora"}`}
+                  className="h-9 w-9 cursor-pointer p-0 text-destructive hover:bg-destructive/10 hover:text-destructive sm:order-last sm:h-8 sm:w-8"
+                  onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:hidden">
+                  Termos de correspondência
+                </label>
+                <Input
+                  value={it.match_terms}
+                  onChange={(e) =>
+                    setItems((p) => p.map((x, i) => (i === idx ? { ...x, match_terms: e.target.value } : x)))
+                  }
+                  className="h-9 border-input bg-background text-[12px] sm:h-8"
+                  placeholder="ex.: bensaude, ben saude"
+                />
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <Button size="sm" variant="ghost" className="h-8 text-[12px]" onClick={() => setOpen(false)}>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-3">
+          <Button size="sm" variant="ghost" className="h-8 cursor-pointer text-[12px]" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button size="sm" className="h-8 text-[12px]" onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button size="sm" className="h-8 cursor-pointer text-[12px]" onClick={() => save.mutate()} disabled={save.isPending}>
             {save.isPending ? "Salvando…" : "Salvar metas"}
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground/70">
+        <p className="text-[11px] text-muted-foreground">
           Os termos são usados para associar cada lead (campanha, anúncio, domínio ou título) à operadora. Metas iguais a
           zero aparecem como “Sem meta definida” e não entram no percentual geral.
         </p>

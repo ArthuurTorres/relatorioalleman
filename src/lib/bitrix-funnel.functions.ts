@@ -258,7 +258,13 @@ export const getBitrixStageLeads = createServerFn({ method: "POST" })
 
 /** ----- Criativos + Funil ----- */
 
-/** Schema de resposta para getCreativesFunnel */
+export const CreativeFunnelStepRateSchema = z.object({
+  total: z.number(),
+  pct: z.number().nullable(),
+  step_rank: z.number().optional(),
+});
+
+/** Schema de resposta para getCreativesFunnel alinhado ao CreativesFunnelCard */
 export const CreativesFunnelSchema = z.object({
   stages: z
     .array(z.object({ rank: z.number(), step: z.string() }))
@@ -286,8 +292,11 @@ export const CreativesFunnelSchema = z.object({
         cpl: z.number().nullable(),
         ctr: z.number().nullable(),
         cpm: z.number().nullable(),
-        funnel_rates: z.record(z.string(), z.number()).optional(),
-      })
+        funnel_rates: z
+          .record(z.string(), CreativeFunnelStepRateSchema)
+          .nullable()
+          .optional(),
+      }),
     )
     .optional(),
 });
@@ -297,13 +306,84 @@ export type CreativesFunnelData = z.infer<typeof CreativesFunnelSchema>;
 /** Desempenho de criativos com aproveitamento por etapa do funil. */
 export const getCreativesFunnel = createServerFn({ method: "POST" })
   .validator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<CreativesFunnelData> => {
     await requireUnlocked();
     const supabase = await getClient();
-    const { data: result, error } = await (supabase as any).rpc("get_creatives_funnel", {
-      p_from: data.from,
-      p_to: data.to,
+
+    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
+      "get_creatives_funnel",
+      {
+        p_from: data.from,
+        p_to: data.to,
+      },
+    );
+
+    if (!rpcError && rpcResult) {
+      const parsed = CreativesFunnelSchema.safeParse(rpcResult);
+      if (parsed.success) {
+        return parsed.data;
+      }
+    }
+
+    const { computeCreativesPerformance } = await import(
+      "@/lib/creatives.functions"
+    );
+    const payload = await computeCreativesPerformance(supabase, {
+      from: data.from,
+      to: data.to,
     });
-    if (error) throw new Error(error.message);
-    return CreativesFunnelSchema.parse(result) as CreativesFunnelData;
+
+    const stages = payload.stages.map((s) => ({
+      rank: s.step_rank,
+      step: s.step_name,
+    }));
+
+    const ads = payload.items
+      .filter((item) => item.spend > 0 || item.leads > 0)
+      .map((item) => {
+        const funnelRates: Record<
+          string,
+          { total: number; pct: number | null; step_rank: number }
+        > = {};
+
+        if (item.leads_crm > 0) {
+          for (const stage of payload.stages) {
+            const total = item.funnel_counts[stage.step_name] ?? 0;
+            const pct = item.funnel_rates[stage.step_name] ?? 0;
+            funnelRates[stage.step_name] = {
+              total,
+              pct,
+              step_rank: stage.step_rank,
+            };
+          }
+        }
+
+        return {
+          ad_id: item.ad_id,
+          ad_name: item.ad_name,
+          adset_id: item.adset_id,
+          campaign_id: item.campaign_id,
+          campaign_name: item.campaign_name,
+          spend: item.spend,
+          impressions: item.impressions,
+          clicks: item.clicks,
+          reach: item.reach,
+          leads: item.leads,
+          leads_meta: item.leads_crm > 0 ? item.leads_crm_meta : item.leads_meta,
+          leads_outros: item.leads_crm_outros,
+          valor_gerado: item.valor_gerado,
+          valor_meta: item.valor_meta,
+          valor_outros: item.valor_outros,
+          ticket_medio: item.ticket_medio,
+          roas: item.roas,
+          cpl: item.cpl,
+          ctr: item.ctr,
+          cpm: item.cpm,
+          funnel_rates:
+            Object.keys(funnelRates).length > 0 ? funnelRates : undefined,
+        };
+      })
+      .sort((a, b) => b.valor_gerado - a.valor_gerado || b.spend - a.spend);
+
+    return CreativesFunnelSchema.parse({ stages, ads });
   });

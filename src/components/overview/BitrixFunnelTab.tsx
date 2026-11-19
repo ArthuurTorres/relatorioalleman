@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { nfmt, pctfmt, currency, downloadCsv, toCsv } from "@/lib/dashboard-utils";
-import { StageMapping } from "./StageMapping";
 import { Download } from "lucide-react";
 
 type Props = { filters: { from: string; to: string } };
@@ -29,13 +28,13 @@ const ORIGEM_TABS: { label: string; value: string[] | null }[] = [
 ];
 
 const STEP_TONE: Record<string, string> = {
-  novo: "bg-sky-500/15 text-sky-300 ring-sky-500/20",
-  qualificado: "bg-indigo-500/15 text-indigo-300 ring-indigo-500/20",
-  tentativa: "bg-amber-500/15 text-amber-300 ring-amber-500/20",
-  contatado: "bg-violet-500/15 text-violet-300 ring-violet-500/20",
-  negociacao: "bg-orange-500/15 text-orange-300 ring-orange-500/20",
-  venda: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/20",
-  perdido: "bg-red-500/15 text-red-300 ring-red-500/20",
+  novo: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-sky-500/25",
+  qualificado: "bg-indigo-500/12 text-indigo-700 dark:text-indigo-300 ring-indigo-500/25",
+  tentativa: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-amber-500/25",
+  contatado: "bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-violet-500/25",
+  negociacao: "bg-orange-500/12 text-orange-700 dark:text-orange-300 ring-orange-500/25",
+  venda: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-emerald-500/25",
+  perdido: "bg-red-500/12 text-red-700 dark:text-red-300 ring-red-500/25",
 };
 
 export function BitrixFunnelTab({ filters }: Props) {
@@ -76,24 +75,29 @@ export function BitrixFunnelTab({ filters }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-white/[0.06] bg-card/40">
+      <Card className="bento-card border-0">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-base">Funis do Bitrix</CardTitle>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pipeline CRM</p>
+            <CardTitle className="mt-0.5 font-display text-base">Funis do Bitrix</CardTitle>
             <p className="mt-1 text-xs text-muted-foreground">
               Espelho das etapas reais do seu CRM. Clique em uma etapa para ver os leads nominalmente.
             </p>
           </div>
-          <div className="flex flex-wrap gap-1 rounded-lg border border-white/[0.06] bg-card/50 p-1">
+          <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/60 p-1">
             {ORIGEM_TABS.map((t, i) => (
-              <Button
+              <button
                 key={t.label}
-                size="sm"
-                variant={i === origemIdx ? "secondary" : "ghost"}
+                type="button"
                 onClick={() => setOrigemIdx(i)}
+                className={
+                  i === origemIdx
+                    ? "filter-chip filter-chip-active"
+                    : "filter-chip hover:bg-card hover:text-foreground"
+                }
               >
                 {t.label}
-              </Button>
+              </button>
             ))}
           </div>
         </CardHeader>
@@ -110,15 +114,16 @@ export function BitrixFunnelTab({ filters }: Props) {
                 {pipelines.map((p) => (
                   <button
                     key={p.id}
+                    type="button"
                     onClick={() => setPipelineId(p.id)}
-                    className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                    className={`cursor-pointer rounded-lg border px-3 py-2 text-left text-xs transition ${
                       active?.id === p.id
-                        ? "border-primary/40 bg-primary/10"
-                        : "border-white/[0.06] bg-card/40 hover:bg-card/70"
+                        ? "border-primary/40 bg-primary/10 text-foreground"
+                        : "border-border bg-muted/25 hover:bg-muted/60"
                     }`}
                   >
                     <span className="block font-medium">{p.name}</span>
-                    <span className="text-muted-foreground">{nfmt(p.total)} leads</span>
+                    <span className="text-muted-foreground tabular-nums">{nfmt(p.total)} leads</span>
                   </button>
                 ))}
               </div>
@@ -139,15 +144,16 @@ export function BitrixFunnelTab({ filters }: Props) {
                   return (
                     <button
                       key={s.stage_id}
+                      type="button"
                       onClick={() => s.leads > 0 && setStage(s)}
-                      className={`group grid w-full grid-cols-12 items-center gap-3 rounded-lg border border-white/[0.04] px-3 py-2.5 text-left transition ${
-                        s.leads > 0 ? "cursor-pointer hover:bg-card/70" : "opacity-50"
+                      className={`group grid w-full grid-cols-12 items-center gap-3 rounded-lg border border-border bg-card px-3.5 py-2.5 text-left transition ${
+                        s.leads > 0 ? "cursor-pointer hover:border-primary/30 hover:bg-muted/40" : "opacity-55"
                       }`}
                     >
-                      <div className="col-span-12 flex items-center gap-2 sm:col-span-5">
-                        <span className="text-sm font-medium">{s.name}</span>
+                      <div className="col-span-12 flex flex-wrap items-center gap-2 sm:col-span-5">
+                        <span className="text-sm font-medium text-foreground">{s.name}</span>
                         {tone && (
-                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] ring-1 ${tone}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${tone}`}>
                             {s.funnel_step}
                           </span>
                         )}
@@ -155,18 +161,18 @@ export function BitrixFunnelTab({ filters }: Props) {
                         {s.semantics === "F" && <Badge variant="outline">perda</Badge>}
                       </div>
                       <div className="col-span-7 sm:col-span-4">
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                           <div
-                            className="h-full rounded-full bg-primary/70"
+                            className="h-full rounded-full bg-primary"
                             style={{ width: `${(s.leads / maxLeads) * 100}%` }}
                           />
                         </div>
                       </div>
-                      <div className="col-span-5 text-right text-xs sm:col-span-3">
-                        <span className="font-semibold">{nfmt(s.leads)}</span>
+                      <div className="col-span-5 text-right text-xs tabular-nums sm:col-span-3">
+                        <span className="font-semibold text-foreground">{nfmt(s.leads)}</span>
                         <span className="text-muted-foreground"> · {pctfmt(share, 1)}</span>
                         {conv != null && (
-                          <span className="block text-[11px] text-muted-foreground/80">
+                          <span className="block text-[11px] text-muted-foreground">
                             {pctfmt(conv, 1)} da etapa anterior
                           </span>
                         )}
@@ -223,14 +229,15 @@ function CohortCard({
   const base = primeiro?.total ?? 0;
 
   return (
-    <Card className="border-white/[0.06] bg-card/40">
+    <Card className="bento-card border-0">
       <CardHeader>
-        <CardTitle className="text-base">Aproveitamento por coorte · {origem}</CardTitle>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Análise de Coorte</p>
+        <CardTitle className="mt-0.5 font-display text-base">Aproveitamento por coorte · {origem}</CardTitle>
         <p className="mt-1 text-xs text-muted-foreground">
           Dos {nfmt(noPeriodo)} leads criados no período, quantos chegaram a cada etapa — contagem
           cumulativa (chegou aqui ou além) pelo histórico de etapas do CRM. Quem o time moveu de
-          Qualificado direto para Tentativa continua contando nas duas: por isso a coluna "da etapa
-          anterior" nunca passa de 100%.
+          Qualificado direto para Tentativa continua contando nas duas: por isso a coluna “da etapa
+          anterior” nunca passa de 100%.
         </p>
       </CardHeader>
       <CardContent>
@@ -242,46 +249,48 @@ function CohortCard({
             do CRM para habilitar esta leitura.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Etapa</TableHead>
-                  <TableHead className="text-right">Chegaram ou passaram</TableHead>
-                  <TableHead className="text-right">Da coorte medida</TableHead>
-                  <TableHead className="text-right">Avanço da etapa anterior</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {etapas.map((e) => {
-                  const anterior = etapas[etapas.indexOf(e) - 1];
-                  const daCoorte = base ? (e.total / base) * 100 : 0;
-                  const conv = anterior && anterior.total > 0 ? (e.total / anterior.total) * 100 : null;
-                  const tone = STEP_TONE[e.etapa];
-                  return (
-                    <TableRow key={`${e.rank}-${e.etapa}`}>
-                      <TableCell>
-                        <span className="flex items-center gap-2 text-sm">
-                          {e.etapa}
-                          {tone && (
-                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ring-1 ${tone}`}>
-                              {e.rank}
-                            </span>
-                          )}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">{nfmt(e.total)}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
-                        {pctfmt(daCoorte, 1)}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
-                        {conv != null ? `${pctfmt(conv, 1)} de ${nfmt(anterior!.total)}` : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <div>
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Etapa</TableHead>
+                    <TableHead className="text-right">Chegaram ou passaram</TableHead>
+                    <TableHead className="text-right">Da coorte medida</TableHead>
+                    <TableHead className="text-right">Avanço da etapa anterior</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {etapas.map((e) => {
+                    const anterior = etapas[etapas.indexOf(e) - 1];
+                    const daCoorte = base ? (e.total / base) * 100 : 0;
+                    const conv = anterior && anterior.total > 0 ? (e.total / anterior.total) * 100 : null;
+                    const tone = STEP_TONE[e.etapa];
+                    return (
+                      <TableRow key={`${e.rank}-${e.etapa}`}>
+                        <TableCell>
+                          <span className="flex items-center gap-2 text-sm font-medium">
+                            {e.etapa}
+                            {tone && (
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${tone}`}>
+                                {e.rank}
+                              </span>
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{nfmt(e.total)}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                          {pctfmt(daCoorte, 1)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                          {conv != null ? `${pctfmt(conv, 1)} de ${nfmt(anterior!.total)}` : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
             <p className="mt-3 text-[11px] text-muted-foreground">
               Base da coorte: {nfmt(total)} leads com histórico no CRM, de {nfmt(noPeriodo)} no
               período
@@ -296,9 +305,9 @@ function CohortCard({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-card/40 p-3">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-2xl font-semibold">{value}</p>
+    <div className="rounded-xl border border-border bg-muted/25 p-3.5">
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+      <p className="mt-1 font-display text-2xl font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
@@ -330,11 +339,11 @@ function StageLeadsSheet({
 
   return (
     <Sheet open={Boolean(stage)} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent side="right" className="w-full overflow-y-auto border-border bg-card sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>
+          <SheetTitle className="font-display">
             {stage?.name}
-            <span className="block text-xs font-normal text-muted-foreground">
+            <span className="mt-0.5 block font-sans text-xs font-normal text-muted-foreground">
               {pipelineName} · {nfmt(rows.length)} leads
             </span>
           </SheetTitle>
@@ -344,6 +353,7 @@ function StageLeadsSheet({
           <Button
             size="sm"
             variant="outline"
+            className="cursor-pointer border-border"
             disabled={!rows.length}
             onClick={() =>
               downloadCsv(
@@ -362,14 +372,14 @@ function StageLeadsSheet({
               )
             }
           >
-            <Download className="h-3.5 w-3.5" /> CSV
+            <Download className="mr-1.5 h-3.5 w-3.5" /> CSV
           </Button>
         </div>
 
         {leads.isLoading ? (
           <Skeleton className="mt-4 h-48 w-full" />
         ) : (
-          <div className="mt-3 overflow-x-auto">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -383,9 +393,9 @@ function StageLeadsSheet({
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.bitrix_deal_id}>
-                    <TableCell className="max-w-[220px] truncate">{r.titulo ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{r.bitrix_deal_id}</TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="max-w-[220px] truncate font-medium">{r.titulo ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground tabular-nums">{r.bitrix_deal_id}</TableCell>
+                    <TableCell className="text-xs tabular-nums">
                       {r.data_criacao
                         ? new Date(r.data_criacao).toLocaleDateString("pt-BR", {
                             timeZone: "America/Sao_Paulo",
@@ -393,7 +403,7 @@ function StageLeadsSheet({
                         : "—"}
                     </TableCell>
                     <TableCell className="text-xs">{r.origem ?? "—"}</TableCell>
-                    <TableCell className="text-right text-xs">{currency(r.valor ?? 0)}</TableCell>
+                    <TableCell className="text-right text-xs tabular-nums">{currency(r.valor ?? 0)}</TableCell>
                   </TableRow>
                 ))}
                 {!rows.length && (

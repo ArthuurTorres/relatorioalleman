@@ -9,10 +9,17 @@ import {
 export const unlockSite = createServerFn({ method: "POST" })
   .validator((data: { password: string }) => data)
   .handler(async ({ data }) => {
-    const expected = process.env.SITE_PASSWORD?.trim();
-    if (!expected) throw new Error("SITE_PASSWORD não configurado");
+    const expected =
+      process.env.SITE_PASSWORD?.trim() || process.env.GATE_PASSWORD?.trim();
+
+    if (!expected) {
+      throw new Error("SITE_PASSWORD não configurado");
+    }
+
     const input = (data.password ?? "").trim();
-    if (!passwordMatches(input, expected)) return { ok: false as const };
+    if (!passwordMatches(input, expected)) {
+      return { ok: false as const };
+    }
     await markUnlocked();
     return { ok: true as const };
   });

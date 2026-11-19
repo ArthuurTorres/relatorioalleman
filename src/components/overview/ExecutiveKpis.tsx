@@ -17,7 +17,7 @@ export type Kpi = {
 function VarChip({ v, suffix }: { v: number | null; suffix?: string }) {
   if (v == null)
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70">
+      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
         <Minus className="h-3 w-3" /> sem período anterior
       </span>
     );
@@ -25,12 +25,12 @@ function VarChip({ v, suffix }: { v: number | null; suffix?: string }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-[11px] font-medium tabular-nums ${
-        up ? "text-emerald-400" : "text-red-400"
+        up ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
       }`}
     >
       {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-      {`${up ? "" : ""}${v.toFixed(1)}${suffix ?? "%"}`}
-      <span className="text-muted-foreground/60 font-normal">vs anterior</span>
+      {`${v.toFixed(1)}${suffix ?? "%"}`}
+      <span className="font-normal text-muted-foreground">vs anterior</span>
     </span>
   );
 }
@@ -41,7 +41,7 @@ export function ExecutiveKpis({ kpis, loading }: { kpis: Kpi[]; loading?: boolea
       {kpis.map((k) => (
         <div
           key={k.key}
-          className="rounded-xl border border-white/[0.06] bg-card/60 px-4 py-3.5 transition hover:border-primary/25"
+          className="rounded-xl border border-border bg-card px-4 py-3.5 shadow-2xs transition hover:border-primary/30"
         >
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <div className="min-w-0">
@@ -51,15 +51,15 @@ export function ExecutiveKpis({ kpis, loading }: { kpis: Kpi[]; loading?: boolea
               {loading ? (
                 <Skeleton className="mt-2 h-7 w-24" />
               ) : k.value == null ? (
-                <p className="mt-1.5 text-[13px] font-medium text-amber-300/90">{AWAITING}</p>
+                <p className="mt-1.5 text-[13px] font-medium text-amber-700 dark:text-amber-300">{AWAITING}</p>
               ) : (
-                <p className="mt-1 truncate font-display text-[22px] font-semibold leading-tight tracking-tight tabular-nums">
+                <p className="mt-1 truncate font-display text-[22px] font-semibold leading-tight tracking-tight text-foreground tabular-nums">
                   {k.value}
                 </p>
               )}
               <div className="mt-1.5">
                 {k.value == null ? (
-                  <span className="text-[11px] text-muted-foreground/60">{k.hint ?? "sem fonte de dados"}</span>
+                  <span className="text-[11px] text-muted-foreground">{k.hint ?? "sem fonte de dados"}</span>
                 ) : (
                   <VarChip v={k.variation} suffix={k.variationSuffix} />
                 )}

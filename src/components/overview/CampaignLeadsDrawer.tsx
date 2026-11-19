@@ -27,7 +27,16 @@ function pct(n: number, d: number) {
 }
 
 function fmtDate(v: string | null) {
-  return v ? new Date(v).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  return v
+    ? new Date(v).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
 }
 
 export function CampaignLeadsDrawer({
@@ -71,10 +80,28 @@ export function CampaignLeadsDrawer({
     downloadCsv(
       `leads-${campaignName.slice(0, 40).replace(/[^\w-]+/g, "-")}.csv`,
       toCsv(
-        ["Nome", "Telefone", "Cidade", "Deal ID", "Data de entrada", "Campaign ID", "Campaign Name", "Etapa atual", "Qualificação", "Status", "Valor"],
+        [
+          "Nome",
+          "Telefone",
+          "Cidade",
+          "Deal ID",
+          "Data de entrada",
+          "Campaign ID",
+          "Campaign Name",
+          "Etapa atual",
+          "Qualificação",
+          "Status",
+          "Valor",
+        ],
         leads.map((l) => [
-          l.titulo ?? "", l.telefone ?? "", l.cidade ?? "", l.bitrix_deal_id, fmtDate(l.data_criacao),
-          l.campaign_id ?? "", l.campaign_name ?? "", l.stage_label ?? l.fase ?? "",
+          l.titulo ?? "",
+          l.telefone ?? "",
+          l.cidade ?? "",
+          l.bitrix_deal_id,
+          fmtDate(l.data_criacao),
+          l.campaign_id ?? "",
+          l.campaign_name ?? "",
+          l.stage_label ?? l.fase ?? "",
           STEP_LABEL[l.funnel_step] ?? l.funnel_step,
           l.funnel_step === "venda" ? "Ganho" : l.funnel_step === "perdido" ? "Perdido" : "Em andamento",
           l.valor ?? "",
@@ -85,9 +112,9 @@ export function CampaignLeadsDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent side="right" className="w-full overflow-y-auto border-border bg-card sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle className="pr-6 text-left text-[15px] leading-snug">{campaignName}</SheetTitle>
+          <SheetTitle className="pr-6 text-left font-display text-[15px] leading-snug">{campaignName}</SheetTitle>
         </SheetHeader>
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -113,35 +140,67 @@ export function CampaignLeadsDrawer({
         <div className="mt-6">
           <div className="flex items-center justify-between gap-3">
             <h4 className="font-display text-[13px] font-semibold">Leads desta campanha</h4>
-            <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={exportCsv} disabled={leads.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 cursor-pointer border-border text-[11px]"
+              onClick={exportCsv}
+              disabled={leads.length === 0}
+            >
               <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar
             </Button>
           </div>
           {q.isLoading ? (
-            <div className="mt-3 space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            <div className="mt-3 space-y-2">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-8 w-full" />
+              ))}
+            </div>
           ) : leads.length === 0 ? (
-            <p className="py-8 text-center text-[12px] text-muted-foreground">Nenhum lead relacionado a esta campanha no período.</p>
+            <p className="py-8 text-center text-[12px] text-muted-foreground">
+              Nenhum lead relacionado a esta campanha no período.
+            </p>
           ) : (
-            <div className="mt-3 max-h-[420px] overflow-auto rounded-lg border border-white/5">
+            <div className="mt-3 max-h-[420px] overflow-auto rounded-lg border border-border">
               <table className="w-full min-w-[860px] text-[12px]">
-                <thead className="sticky top-0 bg-card">
+                <thead className="sticky top-0 border-b border-border bg-card">
                   <tr>
                     {["Nome", "Telefone", "Cidade", "Deal ID", "Entrada", "Etapa atual", "Situação"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-3 py-2 text-left text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">{h}</th>
+                      <th
+                        key={h}
+                        className="whitespace-nowrap px-3 py-2 text-left text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {leads.map((l) => (
-                    <tr key={l.bitrix_deal_id} className="border-t border-white/5">
-                      <td className="max-w-[200px] truncate px-3 py-2" title={l.titulo ?? ""}>{l.titulo ?? "—"}</td>
-                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">{l.telefone ?? "—"}</td>
+                    <tr key={l.bitrix_deal_id} className="zebra-row border-t border-border">
+                      <td className="max-w-[200px] truncate px-3 py-2 font-medium" title={l.titulo ?? ""}>
+                        {l.titulo ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground tabular-nums">
+                        {l.telefone ?? "—"}
+                      </td>
                       <td className="max-w-[140px] truncate px-3 py-2 text-muted-foreground">{l.cidade ?? "—"}</td>
-                      <td className="px-3 py-2 tabular-nums text-muted-foreground">{l.bitrix_deal_id}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{fmtDate(l.data_criacao)}</td>
+                      <td className="px-3 py-2 text-muted-foreground tabular-nums">{l.bitrix_deal_id}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground tabular-nums">
+                        {fmtDate(l.data_criacao)}
+                      </td>
                       <td className="px-3 py-2 text-muted-foreground">{l.stage_label ?? l.fase ?? "—"}</td>
                       <td className="px-3 py-2">
-                        <Badge variant={l.funnel_step === "venda" ? "default" : l.funnel_step === "perdido" ? "destructive" : "secondary"} className="text-[10px]">
+                        <Badge
+                          variant={
+                            l.funnel_step === "venda"
+                              ? "default"
+                              : l.funnel_step === "perdido"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="text-[10px]"
+                        >
                           {STEP_LABEL[l.funnel_step] ?? l.funnel_step}
                         </Badge>
                       </td>
@@ -159,7 +218,7 @@ export function CampaignLeadsDrawer({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/5 bg-card/40 p-3">
+    <div className="rounded-xl border border-border bg-muted/25 p-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-[16px] font-semibold tabular-nums">{value}</p>
     </div>

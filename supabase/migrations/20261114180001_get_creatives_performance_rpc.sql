@@ -1,5 +1,6 @@
 -- RPC: lista todos os criativos com performance e posição no funil.
 -- Usado pelo card "Criativos" no OverviewTab.
+-- NOTA: meta_ads usa coluna `id` (não `ad_id`); lead_match pode estar vazio em ambiente local.
 CREATE OR REPLACE FUNCTION get_creatives_performance(p_from TIMESTAMPTZ, p_to TIMESTAMPTZ)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -35,10 +36,10 @@ BEGIN
       COUNT(DISTINCT lm.bitrix_deal_id)               AS leads,
       COALESCE(SUM(COALESCE(bd.valor_total, 0)), 0)  AS valor
     FROM meta_ads ma
-    JOIN meta_ad_insights mai ON mai.ad_id = ma.ad_id
+    JOIN meta_ad_insights mai ON mai.ad_id = ma.id
       AND mai.date_start >= p_from::DATE
       AND mai.date_start <= p_to::DATE
-    LEFT JOIN lead_match lm ON lm.ad_id = ma.ad_id
+    LEFT JOIN lead_match lm ON lm.ad_id = ma.id
     LEFT JOIN bitrix_deals bd ON bd.id = lm.bitrix_deal_id
     WHERE ma.creative_id IS NOT NULL
     GROUP BY ma.creative_id
@@ -52,10 +53,10 @@ BEGIN
       fs.stage_name,
       COUNT(DISTINCT lm.bitrix_deal_id) AS deal_count
     FROM meta_ads ma
-    JOIN meta_ad_insights mai ON mai.ad_id = ma.ad_id
+    JOIN meta_ad_insights mai ON mai.ad_id = ma.id
       AND mai.date_start >= p_from::DATE
       AND mai.date_start <= p_to::DATE
-    JOIN lead_match lm ON lm.ad_id = ma.ad_id
+    JOIN lead_match lm ON lm.ad_id = ma.id
     JOIN deal_stages ds ON ds.bitrix_deal_id = lm.bitrix_deal_id
     JOIN funnel_steps fs ON fs.stage_id = ds.stage_id
     WHERE ma.creative_id IS NOT NULL
@@ -80,7 +81,7 @@ BEGIN
         WHEN COALESCE(cm.spend, 0) = 0 THEN 'sem_gasto'
         WHEN NOT EXISTS (
           SELECT 1 FROM meta_ads ma2
-          JOIN meta_ad_insights mai2 ON mai2.ad_id = ma2.ad_id
+          JOIN meta_ad_insights mai2 ON mai2.ad_id = ma2.id
           WHERE ma2.creative_id = mc.creative_id
             AND mai2.date_start >= p_from::DATE
             AND mai2.date_start <= p_to::DATE

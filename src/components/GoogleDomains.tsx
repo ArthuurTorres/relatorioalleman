@@ -3,21 +3,35 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getGoogleDetail, type Filters } from "@/lib/utm.functions";
 import { GoogleAdsIcon } from "@/components/brand-icons";
+import { CHART, tooltipStyle } from "@/lib/dashboard-utils";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 
-const GOOGLE = "oklch(0.78 0.14 230)";
-const GOOGLE_ACCENT = "oklch(0.72 0.15 165)";
+const GOOGLE = CHART.cyan;
+const GOOGLE_ACCENT = CHART.green;
 
 const num = (n: number | null | undefined) =>
   n == null ? "—" : Number(n).toLocaleString("pt-BR");
@@ -26,9 +40,9 @@ const currency = (n: number | null | undefined) =>
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-card/40 p-4">
+    <div className="rounded-xl border border-border bg-muted/25 p-4">
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-      <p className="mt-1.5 font-display text-2xl tabular-nums">{value}</p>
+      <p className="mt-1.5 font-display text-2xl font-semibold tabular-nums">{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -57,33 +71,33 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
     (rows ?? []).filter((r) => (selected ? r.dominio === selected : true));
 
   return (
-    <Card className="bento-card border-0 relative overflow-hidden">
+    <Card className="bento-card relative overflow-hidden border-0">
       <div
         className="absolute left-0 top-0 h-full w-1"
         style={{ background: `linear-gradient(180deg, ${GOOGLE}, ${GOOGLE_ACCENT})` }}
         aria-hidden
       />
-      <CardHeader className="pt-6 px-6 pb-2">
+      <CardHeader className="px-6 pt-6 pb-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Origem Google</p>
-<CardTitle className="font-display text-xl mt-1 flex items-center gap-2.5">
+        <CardTitle className="mt-1 flex items-center gap-2.5 font-display text-xl">
           <GoogleAdsIcon className="h-6 w-6 shrink-0" />
           Google · Detalhamento por domínio
         </CardTitle>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-2 text-xs text-muted-foreground">
           Cruzamento dos leads do Bitrix com origem Google, agrupados pelo domínio da página de captura,
           campanha, palavra-chave e URL.
         </p>
       </CardHeader>
 
-      <CardContent className="px-6 pb-6 space-y-6">
+      <CardContent className="space-y-6 px-6 pb-6">
         {detail.isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : detail.isError ? (
-          <p className="text-sm text-destructive py-8 text-center">
+          <p className="py-8 text-center text-sm text-destructive">
             Erro ao carregar: {(detail.error as Error).message}
           </p>
         ) : (d?.summary.total ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground py-10 text-center">Sem leads do Google no período</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">Sem leads do Google no período</p>
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -94,34 +108,45 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-xl border border-white/5 bg-card/30 p-4" style={{ height: 300 }}>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+              <div className="rounded-xl border border-border bg-muted/25 p-4" style={{ height: 300 }}>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Leads por domínio
                 </p>
                 <ResponsiveContainer width="100%" height="88%">
                   <BarChart data={(d!.byDomain ?? []).slice(0, 10)} layout="vertical" margin={{ left: 140, right: 12 }}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(1 0 0 / 0.04)" horizontal={false} />
-                    <XAxis type="number" fontSize={11} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="dominio" width={140} fontSize={10} stroke="oklch(0.72 0.03 240)" tickLine={false} axisLine={false} />
-                    <Tooltip
-                      cursor={{ fill: "oklch(1 0 0 / 0.03)" }}
-                      contentStyle={{ background: "hsl(var(--popover))", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 10, fontSize: 12 }}
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                    <XAxis type="number" fontSize={11} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                    <YAxis
+                      type="category"
+                      dataKey="dominio"
+                      width={140}
+                      fontSize={10}
+                      stroke="var(--muted-foreground)"
+                      tickLine={false}
+                      axisLine={false}
                     />
-                    <Bar dataKey="count" name="Leads" fill={GOOGLE} radius={[0, 8, 8, 0]} />
+                    <Tooltip
+                      cursor={{ fill: "var(--chart-cursor)" }}
+                      contentStyle={tooltipStyle}
+                    />
+                    <Bar dataKey="count" name="Leads" fill={GOOGLE} radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-card/30 p-4" style={{ height: 300 }}>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+              <div className="rounded-xl border border-border bg-muted/25 p-4" style={{ height: 300 }}>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Evolução diária
                 </p>
                 <ResponsiveContainer width="100%" height="88%">
                   <LineChart data={d!.daily ?? []}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(1 0 0 / 0.04)" vertical={false} />
-                    <XAxis dataKey="day" fontSize={10} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} />
-                    <YAxis fontSize={10} stroke="oklch(0.6 0.03 240)" tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 10, fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="day" fontSize={10} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                    <YAxis fontSize={10} stroke="var(--muted-foreground)" tickLine={false} axisLine={false} />
+                    <Tooltip
+                      cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                      contentStyle={tooltipStyle}
+                    />
                     <Line type="monotone" dataKey="total" name="Leads" stroke={GOOGLE} strokeWidth={2.5} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -133,7 +158,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
                 placeholder="Filtrar domínio…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                className="h-9 max-w-xs bg-card/40 border-white/10"
+                className="h-9 max-w-xs border-border bg-background"
               />
               {selected && (
                 <Badge
@@ -147,15 +172,17 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
             </div>
 
             <Tabs defaultValue="dominios">
-              <TabsList>
-                <TabsTrigger value="dominios">Domínios</TabsTrigger>
-                <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
-                <TabsTrigger value="termos">Palavras-chave</TabsTrigger>
-                <TabsTrigger value="paginas">URLs</TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto pb-0.5">
+                <TabsList className="w-max">
+                  <TabsTrigger value="dominios">Domínios</TabsTrigger>
+                  <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
+                  <TabsTrigger value="termos">Palavras-chave</TabsTrigger>
+                  <TabsTrigger value="paginas">URLs</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="dominios" className="mt-4">
-                <div className="max-h-[420px] overflow-auto rounded-xl border border-white/5">
+                <div className="max-h-[420px] overflow-auto rounded-xl border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -180,7 +207,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
                           <TableCell className="text-right tabular-nums">{num(r.campanhas)}</TableCell>
                           <TableCell className="text-right tabular-nums">{num(r.termos)}</TableCell>
                           <TableCell className="text-right tabular-nums">{currency(r.valor)}</TableCell>
-                          <TableCell className="text-right text-xs text-muted-foreground">
+                          <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
                             {r.ultimo ? new Date(r.ultimo).toLocaleString("pt-BR") : "—"}
                           </TableCell>
                         </TableRow>
@@ -194,7 +221,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
               </TabsContent>
 
               <TabsContent value="campanhas" className="mt-4">
-                <div className="max-h-[420px] overflow-auto rounded-xl border border-white/5">
+                <div className="max-h-[420px] overflow-auto rounded-xl border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -223,7 +250,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
               </TabsContent>
 
               <TabsContent value="termos" className="mt-4">
-                <div className="max-h-[420px] overflow-auto rounded-xl border border-white/5">
+                <div className="max-h-[420px] overflow-auto rounded-xl border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -248,7 +275,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
               </TabsContent>
 
               <TabsContent value="paginas" className="mt-4">
-                <div className="max-h-[420px] overflow-auto rounded-xl border border-white/5">
+                <div className="max-h-[420px] overflow-auto rounded-xl border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -262,7 +289,7 @@ export function GoogleDomains({ filters }: { filters: Filters }) {
                       {filterByDomain(d!.byPage).map((r, i) => (
                         <TableRow key={`${r.dominio}-${r.pagina}-${i}`}>
                           <TableCell className="text-xs">{r.dominio}</TableCell>
-                          <TableCell className="text-xs max-w-[420px] truncate" title={r.pagina}>
+                          <TableCell className="max-w-[420px] truncate text-xs" title={r.pagina}>
                             {r.pagina || "—"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">{num(r.count)}</TableCell>

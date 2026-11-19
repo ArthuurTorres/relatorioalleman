@@ -143,36 +143,107 @@ export const getMetaSyncState = createServerFn({ method: "GET" })
     };
   });
 
+const OptionalCreativesSchema = z
+  .object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+  })
+  .optional();
+
 function spRange(days: number) {
+  const fmtDay = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
   const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fmt = (d: Date) => {
-    const local = new Date(d.getTime() + (-3) * 3600000);
-    return `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())}T00:00:00.000-03:00`;
+  const toDay = fmtDay(now);
+  const fromDay = fmtDay(new Date(now.getTime() - (days - 1) * 86_400_000));
+  return {
+    from: `${fromDay}T00:00:00.000-03:00`,
+    to: `${toDay}T23:59:59.999-03:00`,
   };
-  const to = fmt(now);
-  const from = fmt(new Date(now.getTime() - days * 86400000));
-  return { from, to };
 }
 
-export const getMetaCreatives = createServerFn({ method: "GET" })
-  .handler(async () => {
+export const getMetaCreatives = createServerFn({ method: "POST" })
+  .validator((d?: { from?: string; to?: string }) =>
+    OptionalCreativesSchema.parse(d),
+  )
+  .handler(async ({ data }): Promise<MetaCreativesData> => {
     await requireUnlocked();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { from, to } = spRange(30);
-// RPC ainda não existe no banco — será criada pela migration no próximo deploy
-    const { data, error } = await (supabaseAdmin as any).rpc("get_creatives_performance", {
-      p_from: from,
-      p_to: to,
-      p_limit: 50,
-    }).single();
-    if (error) {
-      console.error("[getMetaCreatives]", error);
-      return { ads: [] as MetaCreative[], stages: [] as { step_name: string; step_rank: number }[] };
-    }
-    const rpc = (data ?? {}) as { ads?: MetaCreative[]; stages?: { step_name: string; step_rank: number }[] };
+    const [{ supabaseAdmin }, { computeCreativesPerformance }] =
+      await Promise.all([
+        import("@/integrations/supabase/client.server"),
+        import("@/lib/creatives.functions"),
+      ]);
+
+    const defaults = spRange(30);
+    const from = data?.from?.trim() || defaults.from;
+    const to = data?.to?.trim() || defaults.to;
+
+    const payload = await computeCreativesPerformance(supabaseAdmin, {
+      from,
+      to,
+    });
+
+    const seenKeys = new Set<string>();
+    const ads: MetaCreative[] = payload.items.map((item) => {
+      const baseCid = item.creative_id || item.ad_id;
+      const uniqueCid = seenKeys.has(baseCid)
+        ? `${baseCid}:${item.ad_id}`
+        : baseCid;
+      seenKeys.add(uniqueCid);
+
+      const resolvedStatus = item.is_serving_now
+        ? "ACTIVE"
+        : item.delivery_state === "campaign_paused"
+          ? "CAMPAIGN_PAUSED"
+          : item.delivery_state === "adset_paused"
+            ? "ADSET_PAUSED"
+            : item.delivery_state === "archived"
+              ? "ARCHIVED"
+              : item.ad_status ?? "PAUSED";
+
+      return {
+        creative_id: uniqueCid,
+        thumbnail_url: item.thumbnail_url,
+        body: item.body,
+        title: item.title,
+        link_url: item.link_url,
+        ad_id: item.ad_id,
+        ad_name: item.ad_name,
+        campaign_id: item.campaign_id,
+        campaign_name: item.campaign_name,
+        campaign_status: item.campaign_status,
+        ad_status: resolvedStatus,
+        spend: item.spend,
+        impressions: item.impressions,
+        clicks: item.clicks,
+        reach: item.reach,
+        leads: item.leads,
+        leads_meta: item.leads_meta,
+        valor_gerado: item.valor_gerado,
+        ticket_medio: item.ticket_medio,
+        roas: item.roas,
+        cpl: item.cpl,
+        ctr: item.ctr,
+        cpm: item.cpm,
+        funnel_rates:
+          Object.keys(item.funnel_rates).length > 0 ? item.funnel_rates : null,
+        funnel:
+          Object.keys(item.funnel_counts).length > 0
+            ? item.funnel_counts
+            : null,
+      };
+    });
+
     return {
-      ads: (rpc.ads ?? []) as MetaCreative[],
-      stages: (rpc.stages ?? []) as { step_name: string; step_rank: number }[],
+      ads,
+      stages: payload.stages.map((s) => ({
+        step_name: s.step_name,
+        step_rank: s.step_rank,
+      })),
     };
   });

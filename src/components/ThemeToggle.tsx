@@ -11,7 +11,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="sm"
       onClick={toggleTheme}
-      className="text-muted-foreground hover:text-foreground"
+      className="h-8 w-8 cursor-pointer p-0 text-muted-foreground hover:text-foreground"
       title={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
       aria-label={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
     >

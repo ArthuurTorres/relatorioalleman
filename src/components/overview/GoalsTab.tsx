@@ -1,5 +1,9 @@
 import { LeadGoals } from "./LeadGoals";
 
 export function GoalsTab() {
-  return <LeadGoals />;
+  return (
+    <section aria-label="Metas operacionais de leads">
+      <LeadGoals />
+    </section>
+  );
 }

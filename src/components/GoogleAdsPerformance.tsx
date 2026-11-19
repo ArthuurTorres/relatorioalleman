@@ -55,7 +55,9 @@ export function GoogleAdsPerformance({ filters }: { filters: Filters }) {
     <div className="bento-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-<p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dados da conta conectada</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Dados da conta conectada
+          </p>
           <h3 className="mt-1 flex items-center gap-2 font-display text-lg font-semibold">
             <GoogleAdsIcon className="h-6 w-6 shrink-0" /> Google Ads · Mídia
           </h3>
@@ -65,7 +67,7 @@ export function GoogleAdsPerformance({ filters }: { filters: Filters }) {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {KPIS.map(({ key, label, icon: Icon }) => (
-          <div key={key} className="rounded-lg border border-white/[0.06] bg-card/40 p-4">
+          <div key={key} className="rounded-xl border border-border bg-muted/25 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
               <Icon className="h-4 w-4 text-primary" />
@@ -75,7 +77,7 @@ export function GoogleAdsPerformance({ filters }: { filters: Filters }) {
         ))}
       </div>
 
-      <div className="mt-5 max-h-[460px] overflow-auto rounded-lg border border-white/5">
+      <div className="mt-5 max-h-[460px] overflow-auto rounded-lg border border-border">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
@@ -94,8 +96,12 @@ export function GoogleAdsPerformance({ filters }: { filters: Filters }) {
                 <TableCell className="min-w-72 font-medium">{campaign.campaignName}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{campaign.status ?? "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{currency(campaign.spend)}</TableCell>
-                <TableCell className="text-right tabular-nums">{campaign.conversions.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-right tabular-nums">{campaign.costPerConversion == null ? "—" : currency(campaign.costPerConversion)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {campaign.conversions.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {campaign.costPerConversion == null ? "—" : currency(campaign.costPerConversion)}
+                </TableCell>
                 <TableCell className="text-right tabular-nums">{nfmt(campaign.clicks)}</TableCell>
                 <TableCell className="text-right tabular-nums">{nfmt(campaign.impressions)}</TableCell>
               </TableRow>

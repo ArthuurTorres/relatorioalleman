@@ -18,28 +18,30 @@ export function CommercialFunnel({ stages, loading }: { stages: FunnelStage[]; l
         const drop = pass == null ? null : 100 - pass;
         return (
           <div key={s.label} className="grid grid-cols-[minmax(88px,0.9fr)_minmax(0,2.4fr)_auto] items-center gap-3">
-            <span className="truncate text-[12px] text-muted-foreground">{s.label}</span>
-            <div className="h-6 min-w-0 rounded-md bg-white/[0.04]">
+            <span className="truncate text-[12px] font-medium text-muted-foreground">{s.label}</span>
+            <div className="h-6 min-w-0 overflow-hidden rounded-md bg-muted/70">
               {s.value == null ? (
-                <div className="flex h-full items-center px-2 text-[10px] text-amber-300/80">{AWAITING}</div>
+                <div className="flex h-full items-center px-2.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                  {AWAITING}
+                </div>
               ) : (
                 <div
                   className="h-full rounded-md transition-all"
                   style={{
                     width: `${loading ? 0 : Math.max(pct, 2)}%`,
-                    background: "linear-gradient(90deg, oklch(0.7 0.19 305 / 0.9), oklch(0.7 0.19 305 / 0.55))",
+                    background: "var(--grad-accent)",
                   }}
                 />
               )}
             </div>
             <div className="flex shrink-0 items-baseline gap-2 text-right">
-              <span className="text-[12px] font-medium tabular-nums">
+              <span className="text-[12px] font-semibold text-foreground tabular-nums">
                 {s.value == null ? "—" : s.value.toLocaleString("pt-BR")}
               </span>
               {pass != null && (
-                <span className="w-[92px] text-[11px] tabular-nums text-[oklch(0.7_0.19_305)]">
+                <span className="w-[92px] text-[11px] font-medium text-primary tabular-nums">
                   {pass.toFixed(1)}%
-                  <span className="ml-1 text-muted-foreground/60">-{(drop ?? 0).toFixed(1)}%</span>
+                  <span className="ml-1 font-normal text-muted-foreground">-{(drop ?? 0).toFixed(1)}%</span>
                 </span>
               )}
               {pass == null && i > 0 && <span className="w-[92px]" />}

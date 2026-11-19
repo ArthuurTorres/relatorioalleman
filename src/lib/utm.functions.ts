@@ -280,7 +280,7 @@ export const getFilterOptions = createServerFn({ method: "GET" }).handler(async 
     if (r.utm_source) sources.add(r.utm_source);
     if (r.utm_campaign) campaigns.add(r.utm_campaign);
     if (r.dominio) dominios.add(r.dominio);
-    if (r.origem) origens.add(r.origem);
+    if (r.origem === "Meta") origens.add(r.origem); // Só Meta Ads
   }
   return {
     utm_source: Array.from(sources).sort(),

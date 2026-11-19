@@ -2,7 +2,16 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCampaignDetailFn, type CampaignDetail } from "@/lib/campaigns.functions";
@@ -10,7 +19,7 @@ import { CHART, currency, labelDay, nfmt, pctfmt, tooltipStyle } from "@/lib/das
 import { GoogleAdsIcon, MetaIcon } from "@/components/brand-icons";
 import type { CampaignRef } from "@/components/CampaignPicker";
 
-const SERIES = [CHART.cyan, CHART.purple, CHART.green, CHART.amber, "#f472b6", "#38bdf8"];
+const SERIES = [CHART.purple, CHART.cyan, CHART.green, CHART.amber, CHART.red, CHART.grey];
 
 const shortName = (n: string) => (n.length > 26 ? `${n.slice(0, 24)}…` : n);
 
@@ -87,15 +96,15 @@ export function CampaignComparison({
         </p>
         <h3 className="mt-1 font-display text-lg font-semibold">{selection.length} campanhas selecionadas</h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-white/[0.06] bg-card/40 p-4">
+          <div className="rounded-xl border border-border bg-muted/25 p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Investimento somado</p>
             <p className="mt-2 font-display text-2xl font-semibold tabular-nums">{currency(totals.spend)}</p>
           </div>
-          <div className="rounded-lg border border-white/[0.06] bg-card/40 p-4">
+          <div className="rounded-xl border border-border bg-muted/25 p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Leads / conversões</p>
             <p className="mt-2 font-display text-2xl font-semibold tabular-nums">{nfmt(totals.leads)}</p>
           </div>
-          <div className="rounded-lg border border-white/[0.06] bg-card/40 p-4">
+          <div className="rounded-xl border border-border bg-muted/25 p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">CPL médio</p>
             <p className="mt-2 font-display text-2xl font-semibold tabular-nums">
               {totals.cpl == null ? "—" : currency(totals.cpl)}
@@ -106,14 +115,16 @@ export function CampaignComparison({
 
       <div className="bento-card p-5">
         <h4 className="font-display text-[15px] font-semibold">Comparativo lado a lado</h4>
-        <div className="mt-3 overflow-auto rounded-lg border border-white/5">
+        <div className="mt-3 overflow-auto rounded-lg border border-border">
           <table className="w-full min-w-[760px] text-[12.5px]">
-            <thead className="bg-card">
+            <thead className="border-b border-border bg-card">
               <tr>
                 {["Campanha", "Investimento", "Impressões", "Cliques", "CTR", "CPC", "Leads/Conv.", "CPL"].map((h, i) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-3 py-2 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground ${i === 0 ? "text-left" : "text-right"}`}
+                    className={`whitespace-nowrap px-3 py-2.5 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground ${
+                      i === 0 ? "sticky left-0 z-10 border-r border-border/60 bg-card text-left" : "text-right"
+                    }`}
                   >
                     {h}
                   </th>
@@ -122,12 +133,18 @@ export function CampaignComparison({
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={`${r.ref.canal}-${r.ref.id}`} className="zebra-row border-t border-white/5">
-                  <td className="px-3 py-2">
+                <tr key={`${r.ref.canal}-${r.ref.id}`} className="zebra-row border-t border-border">
+                  <td className="sticky left-0 z-10 border-r border-border/60 bg-card px-3 py-2 font-medium">
                     <span className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.color }} />
-                      {r.ref.canal === "meta" ? <MetaIcon className="h-4 w-4 shrink-0" /> : <GoogleAdsIcon className="h-4 w-4 shrink-0" />}
-                      <span className="max-w-[280px] truncate" title={r.ref.name}>{r.ref.name}</span>
+                      {r.ref.canal === "meta" ? (
+                        <MetaIcon className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <GoogleAdsIcon className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="max-w-[260px] truncate" title={r.ref.name}>
+                        {r.ref.name}
+                      </span>
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{currency(r.spend)}</td>
@@ -135,8 +152,8 @@ export function CampaignComparison({
                   <td className="px-3 py-2 text-right tabular-nums">{nfmt(r.clicks)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{pctfmt(r.ctr)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{r.cpc == null ? "—" : currency(r.cpc)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.leads == null ? "—" : nfmt(r.leads)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
+                  <td className="px-3 py-2 text-right font-medium tabular-nums">{r.leads == null ? "—" : nfmt(r.leads)}</td>
+                  <td className="px-3 py-2 text-right font-medium tabular-nums">{r.cpl == null ? "—" : currency(r.cpl)}</td>
                 </tr>
               ))}
             </tbody>
@@ -153,10 +170,14 @@ export function CampaignComparison({
             <div className="mt-3" style={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailySpend} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="2 4" stroke="oklch(1 0 0 / 0.06)" vertical={false} />
-                  <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="oklch(0.6 0.03 240)" />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="oklch(0.6 0.03 240)" />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => currency(Number(v))} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                    formatter={(v: any) => currency(Number(v))}
+                  />
                   <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" />
                   {rows.map((r, i) => (
                     <Line
@@ -183,14 +204,28 @@ export function CampaignComparison({
                 data={rows.map((r) => ({ name: shortName(r.ref.name), leads: r.leads ?? 0, cpl: r.cpl ?? 0 }))}
                 margin={{ top: 8, right: 8, left: -14, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="2 4" stroke="oklch(1 0 0 / 0.06)" vertical={false} />
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="oklch(0.6 0.03 240)" interval={0} height={50} angle={-15} textAnchor="end" />
-                <YAxis yAxisId="left" fontSize={11} tickLine={false} axisLine={false} stroke="oklch(0.6 0.03 240)" />
-                <YAxis yAxisId="right" orientation="right" fontSize={11} tickLine={false} axisLine={false} stroke="oklch(0.6 0.03 240)" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any, n: any) => (n === "CPL" ? currency(Number(v)) : nfmt(Number(v)))} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                  interval={0}
+                  height={50}
+                  angle={-15}
+                  textAnchor="end"
+                />
+                <YAxis yAxisId="left" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <YAxis yAxisId="right" orientation="right" fontSize={11} tickLine={false} axisLine={false} stroke="var(--muted-foreground)" />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ fill: "var(--chart-cursor)" }}
+                  formatter={(v: any, n: any) => (n === "CPL" ? currency(Number(v)) : nfmt(Number(v)))}
+                />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" />
-                <Bar yAxisId="left" dataKey="leads" name="Leads/Conv." fill={CHART.green} radius={[6, 6, 0, 0]} />
-                <Bar yAxisId="right" dataKey="cpl" name="CPL" fill={CHART.amber} radius={[6, 6, 0, 0]} />
+                <Bar yAxisId="left" dataKey="leads" name="Leads/Conv." fill={CHART.green} radius={[5, 5, 0, 0]} />
+                <Bar yAxisId="right" dataKey="cpl" name="CPL" fill={CHART.amber} radius={[5, 5, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

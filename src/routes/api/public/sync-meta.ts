@@ -37,8 +37,205 @@ async function graphAll(initialUrl: string, token: string, params: Record<string
   return out;
 }
 
+function nonEmptyStr(v: unknown): string | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s.length > 0 ? s : null;
+}
+
+function extractCreativeFields(
+  c: Record<string, any>,
+  act: string,
+  imageMap: Record<string, string>,
+) {
+  const story = (c.object_story_spec ?? {}) as Record<string, any>;
+  const linkData = (story.link_data ?? {}) as Record<string, any>;
+  const videoData = (story.video_data ?? {}) as Record<string, any>;
+  const photoData = (story.photo_data ?? {}) as Record<string, any>;
+  const feed = (c.asset_feed_spec ?? {}) as Record<string, any>;
+
+  const feedTitle = Array.isArray(feed.titles)
+    ? feed.titles.map((t: any) => nonEmptyStr(t?.text)).find(Boolean) ?? null
+    : null;
+  const feedBody = Array.isArray(feed.bodies)
+    ? feed.bodies.map((b: any) => nonEmptyStr(b?.text)).find(Boolean) ?? null
+    : null;
+  const feedDesc = Array.isArray(feed.descriptions)
+    ? feed.descriptions.map((d: any) => nonEmptyStr(d?.text)).find(Boolean) ?? null
+    : null;
+  const feedLink = Array.isArray(feed.link_urls)
+    ? feed.link_urls
+        .map((l: any) => nonEmptyStr(l?.website_url) ?? nonEmptyStr(l?.deeplink_url))
+        .find(Boolean) ?? null
+    : null;
+  const feedImgHash = Array.isArray(feed.images)
+    ? feed.images.map((img: any) => nonEmptyStr(img?.hash)).find(Boolean) ?? null
+    : null;
+  const feedImgUrl = Array.isArray(feed.images)
+    ? feed.images.map((img: any) => nonEmptyStr(img?.url)).find(Boolean) ?? null
+    : null;
+  const feedVideoThumb = Array.isArray(feed.videos)
+    ? feed.videos.map((v: any) => nonEmptyStr(v?.thumbnail_url)).find(Boolean) ?? null
+    : null;
+
+  const childAttachment = Array.isArray(linkData.child_attachments)
+    ? (linkData.child_attachments[0] as Record<string, any> | undefined)
+    : undefined;
+
+  const title =
+    nonEmptyStr(c.title) ??
+    nonEmptyStr(linkData.name) ??
+    nonEmptyStr(videoData.title) ??
+    nonEmptyStr(childAttachment?.name) ??
+    feedTitle ??
+    nonEmptyStr(c.name) ??
+    null;
+
+  const body =
+    nonEmptyStr(c.body) ??
+    nonEmptyStr(linkData.message) ??
+    nonEmptyStr(videoData.message) ??
+    nonEmptyStr(photoData.caption) ??
+    feedBody ??
+    nonEmptyStr(linkData.description) ??
+    nonEmptyStr(videoData.link_description) ??
+    feedDesc ??
+    null;
+
+  const linkUrl =
+    nonEmptyStr(c.link_url) ??
+    nonEmptyStr(linkData.link) ??
+    nonEmptyStr(linkData.call_to_action?.value?.link) ??
+    nonEmptyStr(videoData.call_to_action?.value?.link) ??
+    nonEmptyStr(childAttachment?.link) ??
+    feedLink ??
+    null;
+
+  const rawHash =
+    nonEmptyStr(c.image_hash) ??
+    nonEmptyStr(linkData.image_hash) ??
+    nonEmptyStr(videoData.image_hash) ??
+    nonEmptyStr(photoData.image_hash) ??
+    nonEmptyStr(childAttachment?.image_hash) ??
+    feedImgHash ??
+    null;
+
+  let resolvedFromHash = rawHash ? nonEmptyStr(imageMap[rawHash]) : null;
+  if (!resolvedFromHash && nonEmptyStr(c.image_url)) {
+    const rawImg = String(c.image_url);
+    if (imageMap[rawImg]) {
+      resolvedFromHash = nonEmptyStr(imageMap[rawImg]);
+    } else {
+      const lastSeg = rawImg.split("/").pop();
+      if (lastSeg && imageMap[lastSeg]) {
+        resolvedFromHash = nonEmptyStr(imageMap[lastSeg]);
+      }
+    }
+  }
+
+  const directImageUrl =
+    resolvedFromHash ??
+    (nonEmptyStr(c.image_url)?.startsWith("http") ? nonEmptyStr(c.image_url) : null) ??
+    nonEmptyStr(linkData.full_picture) ??
+    nonEmptyStr(linkData.picture) ??
+    nonEmptyStr(videoData.image_url) ??
+    nonEmptyStr(photoData.url) ??
+    nonEmptyStr(childAttachment?.picture) ??
+    feedImgUrl ??
+    feedVideoThumb ??
+    null;
+
+  const thumbUrl =
+    nonEmptyStr(c.thumbnail_url) ??
+    directImageUrl ??
+    feedVideoThumb ??
+    null;
+
+  return {
+    creative_id: String(c.id),
+    account_id: act,
+    title,
+    body,
+    image_url: directImageUrl ?? thumbUrl,
+    thumbnail_url: thumbUrl ?? directImageUrl,
+    link_url: linkUrl,
+    status: nonEmptyStr(c.status),
+    synced_at: new Date().toISOString(),
+  };
+}
+
+/** Registra em campaign_activity todo diff de status/orçamento das campanhas (best-effort). */
+async function logCampaignChanges(
+  supabaseAdmin: import("@supabase/supabase-js").SupabaseClient,
+  campaigns: Array<Record<string, any>>,
+): Promise<void> {
+  try {
+    const ids = campaigns.map((c) => String(c.id)).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const { data: previous, error: readError } = await supabaseAdmin
+      .from("meta_campaigns")
+      .select("id,name,status,effective_status,daily_budget,lifetime_budget")
+      .in("id", ids);
+    if (readError) {
+      console.warn("[syncMeta] campaign activity read:", readError.message);
+      return;
+    }
+
+    const previousById = new Map(
+      (previous ?? []).map((row: any) => [String(row.id), row]),
+    );
+    const trackedFields = [
+      "status",
+      "effective_status",
+      "daily_budget",
+      "lifetime_budget",
+    ] as const;
+    const logRows: Array<Record<string, unknown>> = [];
+    const occurredAt = new Date().toISOString();
+
+    for (const campaign of campaigns) {
+      const id = String(campaign.id ?? "");
+      const old = previousById.get(id) as Record<string, any> | undefined;
+      // Primeira observação: registra somente diffs reais, não estado inicial.
+      if (!old) continue;
+
+      for (const field of trackedFields) {
+        const oldValue = old[field] == null ? null : String(old[field]);
+        const rawNext =
+          field === "daily_budget" || field === "lifetime_budget"
+            ? campaign[field] == null
+              ? null
+              : Number(campaign[field]) / 100
+            : campaign[field] ?? null;
+        const newValue = rawNext == null ? null : String(rawNext);
+        if (oldValue === newValue) continue;
+        logRows.push({
+          campaign_id: id,
+          campaign_name: campaign.name ?? old.name ?? null,
+          field,
+          old_value: oldValue,
+          new_value: newValue,
+          source: "sync",
+          occurred_at: occurredAt,
+        });
+      }
+    }
+
+    if (logRows.length) {
+      const { error } = await supabaseAdmin
+        .from("campaign_activity")
+        .insert(logRows);
+      if (error) console.warn("[syncMeta] campaign activity insert:", error.message);
+    }
+  } catch (error) {
+    // Histórico é best-effort e nunca deve derrubar o sync principal.
+    console.warn("[syncMeta] campaign activity failed:", error);
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Sincroniza os assets de cada criativo: image_url, thumbnail_url, title, body
+// Sincroniza os assets de cada criativo em lote via /{act}/adcreatives (600x600)
 // ---------------------------------------------------------------------------
 async function syncCreatives(
   act: string,
@@ -46,85 +243,100 @@ async function syncCreatives(
   supabaseAdmin: import("@supabase/supabase-js").SupabaseClient,
 ): Promise<number> {
   const errors: string[] = [];
+  const creativeFields =
+    "id,name,title,body,image_url,image_hash,thumbnail_url,link_url,object_type,status,object_story_spec,asset_feed_spec";
 
-  // 5a) Puxa todos os creative_ids únicos dos ads já syncados
-  const { data: adsRows } = await supabaseAdmin
-    .from("meta_ads")
-    .select("creative_id, account_id")
-    .not("creative_id", "is", null);
-
-  if (!adsRows?.length) return 0;
-
-  const seen = new Set<string>();
-  const creatives: AnyRec[] = [];
-
-  for (const ad of adsRows) {
-    const cid = String(ad.creative_id!);
-    if (seen.has(cid)) continue;
-    seen.add(cid);
-    // Puxa detalhes do criativo
-    try {
-      const details: any = await graphGet(`/${cid}`, token, {
-        fields:
-          "id,account_id,title,body,image_url,thumbnail_url,link_url,object_story_spec,status",
-      });
-      creatives.push(details);
-    } catch (e) {
-      errors.push(`creative ${cid}: ${(e as any)?.message}`);
+  // 5a) Pagina todos os criativos da conta em lotes de 200 com miniatura 600x600
+  const byId = new Map<string, Record<string, any>>();
+  try {
+    const pagedCreatives = await graphAll(`/${act}/adcreatives`, token, {
+      fields: creativeFields,
+      thumbnail_width: "600",
+      thumbnail_height: "600",
+      limit: "200",
+    });
+    for (const c of pagedCreatives) {
+      if (c?.id) byId.set(String(c.id), c as Record<string, any>);
     }
-    // Pausa para não estourar rate limit
-    await new Promise((r) => setTimeout(r, 100));
+  } catch (e: any) {
+    errors.push(`adcreatives page: ${String(e?.message || e).slice(0, 240)}`);
   }
 
-  if (!creatives.length) return 0;
+  // 5b) Complementa eventuais creative_ids referenciados em meta_ads ausentes na paginação
+  try {
+    const { data: adsRows } = await supabaseAdmin
+      .from("meta_ads")
+      .select("creative_id,effective_status")
+      .not("creative_id", "is", null)
+      .limit(2000);
 
-  // 5b) Puxa imagens do adaccount para mapear hash → url
-  let imageMap: Record<string, string> = {};
+    const missingActive: string[] = [];
+    const missingOther: string[] = [];
+    const seenMissing = new Set<string>();
+    for (const ad of adsRows ?? []) {
+      const cid = nonEmptyStr(ad.creative_id);
+      if (!cid || byId.has(cid) || seenMissing.has(cid)) continue;
+      seenMissing.add(cid);
+      if (ad.effective_status === "ACTIVE") missingActive.push(cid);
+      else missingOther.push(cid);
+    }
+
+    const toFetch = [...missingActive, ...missingOther].slice(0, 200);
+    for (let i = 0; i < toFetch.length; i += 50) {
+      const batchIds = toFetch.slice(i, i + 50);
+      try {
+        const batchResp = (await graphGet("/", token, {
+          ids: batchIds.join(","),
+          fields: creativeFields,
+          thumbnail_width: "600",
+          thumbnail_height: "600",
+        })) as Record<string, any>;
+        for (const val of Object.values(batchResp ?? {})) {
+          if (val && typeof val === "object" && (val as any).id) {
+            byId.set(String((val as any).id), val as Record<string, any>);
+          }
+        }
+      } catch (e: any) {
+        errors.push(`creatives ids batch: ${String(e?.message || e).slice(0, 200)}`);
+      }
+    }
+  } catch {
+    // Segue com os criativos já paginados
+  }
+
+  if (byId.size === 0) {
+    if (errors.length) console.warn("[syncCreatives] errors:", errors.slice(0, 5));
+    return 0;
+  }
+
+  // 5c) Puxa imagens do adaccount para mapear image_hash -> url em alta resolução
+  const imageMap: Record<string, string> = {};
   try {
     const imgs: AnyRec[] = await graphAll(`/${act}/adimages`, token, {
       fields: "hash,url,width,height",
       limit: "500",
     });
     for (const img of imgs) {
-      imageMap[String(img.hash)] = String(img.url ?? "");
+      const h = nonEmptyStr(img.hash);
+      const u = nonEmptyStr(img.url);
+      if (h && u) imageMap[h] = u;
     }
-  } catch (e) {
-    // Falhar no imagens não bloqueia o sync de criativos
+  } catch {
+    // Falhar em adimages não bloqueia o sync de criativos
   }
 
-  const rows = creatives
-    .filter((c: any) => c.id)
-    .map((c: any) => {
-      // thumbnail_url direto da API (v20+), ou tenta mapa por hash
-      let thumbUrl = c.thumbnail_url ?? "";
-      if (!thumbUrl && c.image_url) {
-        // image_url pode ser um hash
-        const parts = String(c.image_url).split("/");
-        const hash = parts[parts.length - 1];
-        if (hash && imageMap[hash]) thumbUrl = imageMap[hash];
-      }
-      return {
-        creative_id: String(c.id),
-        account_id: act,
-        title: c.title ?? null,
-        body: c.body ?? null,
-        image_url: imageMap[c.image_url] ?? (c.image_url ?? null),
-        thumbnail_url: thumbUrl || null,
-        link_url: c.link_url ?? null,
-        status: c.status ?? null,
-        synced_at: new Date().toISOString(),
-      };
-    });
+  const rows = [...byId.values()].map((c) => extractCreativeFields(c, act, imageMap));
 
   let saved = 0;
   for (let i = 0; i < rows.length; i += 200) {
+    const chunk = rows.slice(i, i + 200);
     const { error } = await supabaseAdmin
       .from("meta_creatives")
-      .upsert(rows.slice(i, i + 200), { onConflict: "creative_id" });
+      .upsert(chunk, { onConflict: "creative_id" });
     if (error) {
       errors.push(`creatives upsert: ${error.message}`);
     } else {
-      saved += rows.slice(i, i + 200).length;
+      saved += chunk.length;
     }
   }
 
@@ -132,6 +344,38 @@ async function syncCreatives(
     console.warn("[syncCreatives] errors:", errors.slice(0, 5));
   }
   return saved;
+}
+
+async function resolveMetaCredentials(
+  supabaseAdmin: import("@supabase/supabase-js").SupabaseClient,
+): Promise<{ token: string | null; accountId: string | null }> {
+  let token = nonEmptyStr(process.env.META_ACCESS_TOKEN);
+  let accountId = nonEmptyStr(process.env.META_AD_ACCOUNT_ID);
+
+  if (!token || !accountId) {
+    try {
+      const { data } = await supabaseAdmin
+        .from("private_settings")
+        .select("k, v")
+        .in("k", [
+          "META_ACCESS_TOKEN",
+          "meta_access_token",
+          "META_AD_ACCOUNT_ID",
+          "meta_ad_account_id",
+        ]);
+      for (const row of (data ?? []) as Array<{ k?: string; v?: string }>) {
+        const keyUpper = String(row.k ?? "").trim().toUpperCase();
+        const val = nonEmptyStr(row.v);
+        if (!val) continue;
+        if (!token && keyUpper === "META_ACCESS_TOKEN") token = val;
+        if (!accountId && keyUpper === "META_AD_ACCOUNT_ID") accountId = val;
+      }
+    } catch {
+      // Ignora erro caso private_settings não esteja acessível
+    }
+  }
+
+  return { token, accountId };
 }
 
 async function handler(request: Request): Promise<Response> {
@@ -164,10 +408,13 @@ async function handler(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const token = process.env.META_ACCESS_TOKEN;
-  const accountId = process.env.META_AD_ACCOUNT_ID;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { token, accountId } = await resolveMetaCredentials(supabaseAdmin);
   if (!token || !accountId) {
-    return Response.json({ ok: false, error: "META_ACCESS_TOKEN ou META_AD_ACCOUNT_ID não configurado" }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "META_ACCESS_TOKEN ou META_AD_ACCOUNT_ID não configurado" },
+      { status: 500 },
+    );
   }
   const act = accountId.startsWith("act_") ? accountId : `act_${accountId}`;
 
@@ -176,7 +423,6 @@ async function handler(request: Request): Promise<Response> {
   const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   const until = new Date().toISOString().slice(0, 10);
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const errors: string[] = [];
   const stats: Record<string, number> = {};
 
@@ -190,6 +436,9 @@ async function handler(request: Request): Promise<Response> {
     const triveCampaigns = campaigns;
     const triveIds = new Set(triveCampaigns.map((c: any) => String(c.id)));
     if (triveCampaigns.length) {
+      // 1a) DIFF de estado anterior -> registra alterações em campaign_activity
+      await logCampaignChanges(supabaseAdmin, triveCampaigns);
+
       const rows = triveCampaigns.map((c: any) => ({
         id: String(c.id),
         account_id: act,

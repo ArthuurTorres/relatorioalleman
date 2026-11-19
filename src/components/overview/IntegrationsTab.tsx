@@ -8,7 +8,10 @@ function fmt(v: string | null | undefined) {
   return v
     ? new Date(v).toLocaleString("pt-BR", {
         timeZone: "America/Sao_Paulo",
-        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : "—";
 }
@@ -48,14 +51,24 @@ export function IntegrationsTab() {
     {
       name: "Meta Ads",
       status: d?.meta_last_run == null ? "unknown" : d.meta_last_status === "ok" && (hours(d.meta_last_run) ?? 99) < 24 ? "ok" : "warn",
-      statusLabel: d?.meta_last_run == null ? "Status indisponível" : d.meta_last_status === "ok" && (hours(d.meta_last_run) ?? 99) < 24 ? "Conectado" : "Atenção",
+      statusLabel:
+        d?.meta_last_run == null
+          ? "Status indisponível"
+          : d.meta_last_status === "ok" && (hours(d.meta_last_run) ?? 99) < 24
+            ? "Conectado"
+            : "Atenção",
       lastSync: fmt(d?.meta_last_run),
       note: d?.meta_last_status && d.meta_last_status !== "ok" ? d.meta_last_status : "—",
     },
     {
       name: "Bitrix",
       status: d?.bitrix_last_run == null ? "unknown" : d.bitrix_last_status === "ok" && (hours(d.bitrix_last_run) ?? 99) < 24 ? "ok" : "error",
-      statusLabel: d?.bitrix_last_run == null ? "Status indisponível" : d.bitrix_last_status === "ok" && (hours(d.bitrix_last_run) ?? 99) < 24 ? "Conectado" : "Atenção",
+      statusLabel:
+        d?.bitrix_last_run == null
+          ? "Status indisponível"
+          : d.bitrix_last_status === "ok" && (hours(d.bitrix_last_run) ?? 99) < 24
+            ? "Conectado"
+            : "Atenção",
       lastSync: fmt(d?.bitrix_last_run),
       note: d?.last_lead_created_at ? `Último lead: ${fmt(d.last_lead_created_at)}` : "—",
     },
@@ -66,14 +79,25 @@ export function IntegrationsTab() {
       lastSync: fmt(google.data?.retrievedAt),
       note: google.isError ? "Falha na leitura da conta" : google.data ? "Leitura direta da conta" : "—",
     },
-    { name: "Sistema comercial (AGSI)", status: "unknown", statusLabel: "Status indisponível", lastSync: "—", note: "Integração não configurada" },
+    {
+      name: "Sistema comercial (AGSI)",
+      status: "unknown",
+      statusLabel: "Status indisponível",
+      lastSync: "—",
+      note: "Integração não configurada",
+    },
   ];
 
   return (
-    <div className="bento-card p-5">
-      <h3 className="mb-3 font-display text-[15px] font-semibold">Saúde das integrações</h3>
+    <div className="bento-card p-5 sm:p-6">
+      <div className="mb-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Telemetria</p>
+        <h3 className="mt-0.5 font-display text-base font-semibold tracking-tight text-foreground">
+          Saúde das integrações
+        </h3>
+      </div>
       <IntegrationsHealth rows={rows} />
-      <p className="mt-3 text-[11px] text-muted-foreground/70">
+      <p className="mt-3 text-[11px] text-muted-foreground">
         Os status refletem os registros de sincronização disponíveis. Quando não há registro, exibimos “Status
         indisponível”.
       </p>

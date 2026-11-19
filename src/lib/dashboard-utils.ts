@@ -98,19 +98,20 @@ export function downloadCsv(filename: string, content: string) {
 }
 
 export const CHART = {
-  cyan: "oklch(0.62 0.2 305)",
-  purple: "oklch(0.72 0.17 55)",
-  grey: "oklch(0.72 0.03 240)",
-  green: "oklch(0.75 0.16 155)",
-  amber: "oklch(0.82 0.15 85)",
-  red: "oklch(0.68 0.2 25)",
+  cyan: "var(--chart-2)",
+  purple: "var(--chart-1)",
+  grey: "var(--chart-5)",
+  green: "var(--chart-3)",
+  amber: "var(--chart-4)",
+  red: "var(--destructive)",
 };
 
 export const tooltipStyle = {
-  background: "oklch(0.2 0.05 305)",
-  border: "1px solid oklch(1 0 0 / 0.08)",
+  background: "var(--popover)",
+  border: "1px solid var(--border)",
   borderRadius: 10,
-  color: "oklch(0.97 0.005 240)",
+  color: "var(--popover-foreground)",
+  boxShadow: "0 8px 24px -6px oklch(0 0 0 / 0.16), 0 2px 6px -1px oklch(0 0 0 / 0.08)",
   fontSize: 12,
   padding: "8px 12px",
 } as const;

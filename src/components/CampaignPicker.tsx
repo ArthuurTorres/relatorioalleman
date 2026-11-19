@@ -73,18 +73,23 @@ export function CampaignPicker({
         <Filter className="h-3.5 w-3.5 text-primary" />
         Filtro por campanha
       </span>
-      <div className="flex gap-0.5 rounded-xl border border-white/10 bg-card/40 p-1 backdrop-blur">
+      <div className="flex gap-0.5 rounded-lg border border-border/80 bg-muted/60 p-1">
         {CANAIS.map((c) => (
           <button
             key={c.key}
+            type="button"
             onClick={() => {
               onCanalChange(c.key);
               if (c.key !== "todos") onSelect(selected.filter((s) => s.canal === c.key));
             }}
-            className={canal === c.key ? "filter-chip filter-chip-active" : "filter-chip hover:bg-white/5 hover:text-foreground"}
+            className={
+              canal === c.key
+                ? "filter-chip filter-chip-active"
+                : "filter-chip hover:bg-card hover:text-foreground"
+            }
           >
-            {c.key === "meta" && <MetaIcon className="mr-1 inline h-4 w-4 align-[-2px]" />}
-            {c.key === "google" && <GoogleAdsIcon className="mr-1 inline h-4 w-4 align-[-2px]" />}
+            {c.key === "meta" && <MetaIcon className="mr-1.5 inline h-3.5 w-3.5 shrink-0" />}
+            {c.key === "google" && <GoogleAdsIcon className="mr-1.5 inline h-3.5 w-3.5 shrink-0" />}
             {c.label}
           </button>
         ))}
@@ -92,7 +97,11 @@ export function CampaignPicker({
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-10 max-w-[320px] justify-between gap-2 border-white/10 bg-card/40">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 max-w-[320px] cursor-pointer justify-between gap-2 border-border bg-background hover:border-primary/40 hover:bg-muted/50"
+          >
             <span className="flex min-w-0 items-center gap-1.5">
               {selected.length === 1 && selected[0]!.canal === "meta" && <MetaIcon className="h-4 w-4 shrink-0" />}
               {selected.length === 1 && selected[0]!.canal === "google" && <GoogleAdsIcon className="h-4 w-4 shrink-0" />}
@@ -102,25 +111,36 @@ export function CampaignPicker({
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[min(92vw,420px)] p-0">
-          <div className="border-b border-white/10 p-2">
-            <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <PopoverContent align="start" className="w-[min(92vw,420px)] border-border bg-popover p-0 shadow-lg">
+          <div className="border-b border-border p-2.5">
+            <p className="px-1 pb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Filtrar relatório por campanha
             </p>
-            <p className="px-1 pb-2 text-[11px] text-muted-foreground/80">
+            <p className="px-1 pb-2 text-[11px] text-muted-foreground">
               Selecione duas ou mais para comparar lado a lado.
             </p>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar campanha" className="h-9 pl-8 text-[13px]" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar campanha"
+                className="h-9 border-input bg-background pl-8 text-[13px]"
+              />
             </div>
           </div>
           <div className="max-h-[320px] overflow-auto p-1.5">
             <button
-              onClick={() => { onSelect([]); setOpen(false); }}
-              className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-white/5"
+              type="button"
+              onClick={() => {
+                onSelect([]);
+                setOpen(false);
+              }}
+              className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/60"
             >
-              <span className="flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Todas as campanhas</span>
+              <span className="flex items-center gap-2 font-medium">
+                <LayoutGrid className="h-4 w-4 text-primary" /> Todas as campanhas
+              </span>
               {selected.length === 0 && <Check className="h-4 w-4 text-primary" />}
             </button>
             {query.isLoading && <p className="px-2.5 py-3 text-sm text-muted-foreground">Carregando campanhas…</p>}
@@ -132,19 +152,26 @@ export function CampaignPicker({
               return (
                 <button
                   key={`${c.canal}-${c.id}`}
+                  type="button"
                   onClick={() => toggle({ canal: c.canal, id: c.id, name: c.name })}
-                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-white/5"
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-primary bg-primary/20" : "border-white/20"}`}
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                        checked ? "border-primary bg-primary/15" : "border-input bg-background"
+                      }`}
                     >
                       {checked && <Check className="h-3 w-3 text-primary" />}
                     </span>
-                    {c.canal === "meta" ? <MetaIcon className="h-4 w-4 shrink-0" /> : <GoogleAdsIcon className="h-4 w-4 shrink-0" />}
+                    {c.canal === "meta" ? (
+                      <MetaIcon className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <GoogleAdsIcon className="h-4 w-4 shrink-0" />
+                    )}
                     <span className="truncate">{c.name}</span>
                   </span>
-                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{currency(c.spend)}</span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{currency(c.spend)}</span>
                 </button>
               );
             })}
@@ -155,7 +182,9 @@ export function CampaignPicker({
       {selected.length > 0 && (
         <Badge variant="secondary" className="gap-1.5">
           {selected.length === 1 ? "Campanha individual" : `Comparando ${selected.length} campanhas`}
-          <button className="underline underline-offset-2" onClick={() => onSelect([])}>limpar</button>
+          <button type="button" className="cursor-pointer underline underline-offset-2 hover:text-foreground" onClick={() => onSelect([])}>
+            limpar
+          </button>
         </Badge>
       )}
     </div>

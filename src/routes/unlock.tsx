@@ -2,16 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { unlockSite } from "@/lib/gate.functions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/unlock")({
   head: () => ({
     meta: [
-      { title: "Acesso · Dashboard UTM" },
-      { name: "description", content: "Digite a senha de acesso para entrar." },
+      { title: "Acesso Executivo · Alleman Corretora" },
+      { name: "description", content: "Portal executivo de inteligência de tráfego e funil comercial." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -37,47 +37,96 @@ function Unlock() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Lock className="h-5 w-5 text-primary" />
+    <div
+      className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10 text-foreground"
+      style={{ backgroundImage: "var(--grad-hero)" }}
+    >
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="bento-card w-full max-w-[420px] p-7 sm:p-8">
+        <div className="flex flex-col items-center text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            Portal Executivo · Acesso Restrito
+          </span>
+
+          <div className="mt-6 flex items-center justify-center gap-3.5">
+            <img
+              src="/trive-logo.png"
+              alt="Trive"
+              className="h-9 w-auto shrink-0 object-contain"
+            />
+            <span className="h-7 w-px bg-border" aria-hidden />
+            <img
+              src="/alleman-logo.jpg"
+              alt="Alleman Corretora"
+              className="h-10 w-auto shrink-0 rounded-lg border border-border/80 bg-white p-1 object-contain shadow-2xs"
+            />
           </div>
-          <CardTitle>Acesso restrito</CardTitle>
-          <CardDescription>Digite a senha para ver o dashboard.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div>
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={show ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  autoFocus
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShow((s) => !s)}
-                  aria-label={show ? "Ocultar senha" : "Mostrar senha"}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                >
-                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+
+          <h1 className="mt-5 font-display text-xl font-semibold tracking-tight text-foreground">
+            Painel de Performance &amp; CRM
+          </h1>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            Insira a credencial executiva para consultar os indicadores consolidados da Alleman Corretora.
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs font-medium text-foreground">
+              Credencial de acesso
+            </Label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={show ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Digite a senha de acesso"
+                required
+                autoFocus
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3.5 py-2 pr-11 text-base text-foreground shadow-2xs transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShow((s) => !s)}
+                aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            {error && <p className="text-sm text-red-600">Senha incorreta</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Entrando…" : "Entrar"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Senha incorreta. Verifique a credencial informada.</span>
+            </div>
+          )}
+
+          <Button type="submit" className="h-10 w-full cursor-pointer font-medium" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Autenticando…
+              </>
+            ) : (
+              "Acessar painel"
+            )}
+          </Button>
+        </form>
+      </div>
+
+      <p className="mt-6 text-center text-[11px] tracking-wider text-muted-foreground uppercase">
+        Trive × Alleman Corretora · Inteligência de Aquisição
+      </p>
     </div>
   );
 }
