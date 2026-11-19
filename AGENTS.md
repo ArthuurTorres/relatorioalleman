@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep the dashboard SSR-enabled with its server-function password guard and a visible pending state so direct navigation does not produce an empty document while the browser initializes.

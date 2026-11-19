@@ -67,11 +67,16 @@ import { getCreativesPerformance } from "@/lib/creatives.functions";
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
 
 export const Route = createFileRoute("/dashboard")({
-  ssr: false,
   beforeLoad: async () => {
     const { unlocked } = await isUnlocked();
     if (!unlocked) throw redirect({ to: "/unlock" });
   },
+  pendingComponent: () => (
+    <div role="status" aria-live="polite" className="flex min-h-screen items-center justify-center gap-3 bg-background text-muted-foreground">
+      <RefreshCcw className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+      <span>Carregando painel…</span>
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Alleman Corretora · Painel de Performance" },
@@ -189,7 +194,7 @@ const RANGE_PRESETS: RangePreset[] = [
 ];
 
 function useFilters() {
-  const initial = RANGE_PRESETS.find((r) => r.key === "30d")!.compute();
+  const initial = RANGE_PRESETS.find((r) => r.key === "30d")?.compute() ?? { from: todayMinus(29), to: endOfToday() };
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
   const [origem, setOrigem] = useState<string[]>([]);

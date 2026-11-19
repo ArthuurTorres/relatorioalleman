@@ -12,6 +12,10 @@ export const Route = createFileRoute("/unlock")({
     meta: [
       { title: "Acesso Executivo · Alleman Corretora" },
       { name: "description", content: "Portal executivo de inteligência de tráfego e funil comercial." },
+      { property: "og:title", content: "Acesso Executivo · Alleman Corretora" },
+      { property: "og:description", content: "Acesso restrito ao relatório executivo da Alleman Corretora." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
