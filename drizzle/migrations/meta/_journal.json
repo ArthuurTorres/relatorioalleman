@@ -15,6 +15,13 @@
       "when": 1795107822083,
       "tag": "0001_create_bitrix_stage_history",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795113866282,
+      "tag": "0002_create_private_campaign_activity",
+      "breakpoints": true
     }
   ]
 }

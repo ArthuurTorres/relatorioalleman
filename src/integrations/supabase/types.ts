@@ -125,6 +125,42 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_activity: {
+        Row: {
+          campaign_id: string
+          campaign_name: string | null
+          created_at: string
+          field: string
+          id: number
+          new_value: string | null
+          occurred_at: string
+          old_value: string | null
+          source: string
+        }
+        Insert: {
+          campaign_id: string
+          campaign_name?: string | null
+          created_at?: string
+          field: string
+          id?: never
+          new_value?: string | null
+          occurred_at?: string
+          old_value?: string | null
+          source?: string
+        }
+        Update: {
+          campaign_id?: string
+          campaign_name?: string | null
+          created_at?: string
+          field?: string
+          id?: never
+          new_value?: string | null
+          occurred_at?: string
+          old_value?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       campaign_lead_map: {
         Row: {
           campaign_id: string

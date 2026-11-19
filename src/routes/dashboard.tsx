@@ -65,6 +65,7 @@ import { TasksTab } from "@/components/tasks/TasksTab";
 import { getCreativesPerformance } from "@/lib/creatives.functions";
 
 import { MetaIcon, GoogleAdsIcon } from "@/components/brand-icons";
+import { currentMonthRange } from "@/lib/report-period";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -175,11 +176,7 @@ const RANGE_PRESETS: RangePreset[] = [
   {
     key: "mes",
     label: "Este mês",
-    compute: () => {
-      const now = new Date();
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { from: startOfDayIso(first), to: endOfToday() };
-    },
+    compute: () => currentMonthRange(),
   },
   {
     key: "mesPassado",
@@ -194,7 +191,7 @@ const RANGE_PRESETS: RangePreset[] = [
 ];
 
 function useFilters() {
-  const initial = RANGE_PRESETS.find((r) => r.key === "30d")?.compute() ?? { from: todayMinus(29), to: endOfToday() };
+  const initial = currentMonthRange();
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
   const [origem, setOrigem] = useState<string[]>([]);

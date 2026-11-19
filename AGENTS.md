@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep the dashboard SSR-enabled with its server-function password guard and a visible pending state so direct navigation does not produce an empty document while the browser initializes.
+- Compute default report and activity month boundaries through the shared São Paulo calendar helper, so server timezone cannot change the selected month.

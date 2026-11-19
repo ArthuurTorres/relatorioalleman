@@ -8,6 +8,8 @@ import {
 import { currency } from "@/lib/dashboard-utils";
 import { cn } from "@/lib/utils";
 import { History, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { currentMonthRange } from "@/lib/report-period";
 
 const FIELD_LABELS: Record<string, string> = {
   status: "Status",
@@ -16,7 +18,8 @@ const FIELD_LABELS: Record<string, string> = {
   lifetime_budget: "Orçamento total",
 };
 
-const RANGES: Array<{ key: string; days: number; label: string }> = [
+const RANGES: Array<{ key: string; days?: number; label: string }> = [
+  { key: "mes", label: "Este mês" },
   { key: "7", days: 7, label: "7 dias" },
   { key: "30", days: 30, label: "30 dias" },
   { key: "90", days: 90, label: "90 dias" },
@@ -53,19 +56,21 @@ const FIELD_COLORS: Record<string, string> = {
 
 export function CampaignActivityCard({ className }: { className?: string }) {
   const activityFn = useServerFn(getCampaignActivity);
-  const [rangeKey, setRangeKey] = useState("30");
+  const [rangeKey, setRangeKey] = useState("mes");
 
-  const range = useMemo(() => {
+  const range = (() => {
+    if (rangeKey === "mes") return currentMonthRange();
     const days = RANGES.find((r) => r.key === rangeKey)?.days ?? 30;
     const to = new Date();
     const from = new Date(Date.now() - days * 86_400_000);
     return { from: from.toISOString(), to: to.toISOString() };
-  }, [rangeKey]);
+  })();
 
   const activity = useQuery({
-    queryKey: ["campaign-activity", rangeKey],
+    queryKey: ["campaign-activity", rangeKey, range.from, range.to],
     queryFn: () => activityFn({ data: range }),
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: false,
   });
 
@@ -103,9 +108,11 @@ export function CampaignActivityCard({ className }: { className?: string }) {
           className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/55 p-1"
         >
           {RANGES.map((r) => (
-            <button
+            <Button
               key={r.key}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setRangeKey(r.key)}
               className={cn(
                 "filter-chip h-7 px-2.5 text-xs",
@@ -115,7 +122,7 @@ export function CampaignActivityCard({ className }: { className?: string }) {
               )}
             >
               {r.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -127,13 +134,11 @@ export function CampaignActivityCard({ className }: { className?: string }) {
         </div>
       ) : activity.isError ? (
         <p className="py-8 text-center text-xs text-amber-700 dark:text-amber-300">
-          Histórico indisponível — a tabela campaign_activity ainda pode não ter sido
-          aplicada no Supabase.
+          Não foi possível consultar as alterações. Tente novamente em instantes.
         </p>
       ) : grouped.length === 0 ? (
         <p className="rounded-xl border border-border/70 bg-muted/25 px-4 py-6 text-center text-xs text-muted-foreground">
-          Nenhuma alteração registrada no período — o histórico é montado
-          automaticamente a cada sincronização do Meta.
+          Nenhuma alteração de status ou orçamento registrada neste período.
         </p>
       ) : (
         <div className="space-y-4">
